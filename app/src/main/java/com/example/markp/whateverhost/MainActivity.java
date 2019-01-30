@@ -5,10 +5,12 @@ import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
 import android.support.annotation.NonNull;
+import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
+import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.support.design.widget.NavigationView;
@@ -205,7 +207,11 @@ public class MainActivity extends AppCompatActivity
             // Handle the camera action
         } else if (id == R.id.nav_dropbox_drawer) {
 
-        } else if (id == R.id.nav_device) {
+        } else if (id == R.id.nav_device)
+        {
+            //Show list of device files
+            setDeviceListView();
+
 
         } else if (id == R.id.nav_manage) {
 
@@ -218,5 +224,35 @@ public class MainActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    private void hideAllContainers()
+    {
+        ConstraintLayout welcomeLayout = findViewById(R.id.welcomeLayout);
+        welcomeLayout.setVisibility(View.GONE);
+
+        ViewPager myDeviceViewPager = findViewById(R.id.myDeviceViewPager);
+        myDeviceViewPager.setVisibility(View.GONE);
+
+        ViewPager dropboxViewPager = findViewById(R.id.dropboxViewpager);
+        dropboxViewPager.setVisibility(View.GONE);
+
+    }
+
+    private void setDeviceListView()
+    {
+        hideAllContainers();
+
+        ViewPager myDeviceViewPager = findViewById(R.id.myDeviceViewPager);
+        myDeviceViewPager.setVisibility(View.VISIBLE);
+
+        SectionsStatePagerAdapter adapter = new SectionsStatePagerAdapter(getSupportFragmentManager());
+
+        DeviceListFragment fragment = new DeviceListFragment();
+
+        adapter.addFragment(fragment,"DeviceList");
+
+        myDeviceViewPager.setAdapter(adapter);
+
     }
 }
