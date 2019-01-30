@@ -1,8 +1,15 @@
 package com.example.markp.whateverhost;
 
+import android.Manifest;
+import android.content.DialogInterface;
+import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
 import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AlertDialog;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -12,9 +19,17 @@ import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.Toast;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
+
+//region Permission Variables
+
+
+    private static final int MY_PERMISSIONS_REQUEST_CODE = 1234;
+
+    //endregion
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -40,6 +55,112 @@ public class MainActivity extends AppCompatActivity
 
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
+
+
+
+        getPermissions();
+
+    }
+
+    private void getPermissions()
+    {
+        if (ContextCompat.checkSelfPermission(MainActivity.this,Manifest.permission.READ_EXTERNAL_STORAGE)
+        + ContextCompat.checkSelfPermission(MainActivity.this,Manifest.permission.WRITE_EXTERNAL_STORAGE)
+        + ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.INTERNET)
+        + ContextCompat.checkSelfPermission(MainActivity.this, Manifest.permission.ACCESS_NETWORK_STATE)
+        != PackageManager.PERMISSION_GRANTED)
+        {
+
+            if (ActivityCompat.shouldShowRequestPermissionRationale(
+                    MainActivity.this, Manifest.permission.READ_EXTERNAL_STORAGE)
+                    || ActivityCompat.shouldShowRequestPermissionRationale(
+                            MainActivity.this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    || ActivityCompat.shouldShowRequestPermissionRationale(
+                            MainActivity.this, Manifest.permission.INTERNET)
+                    || ActivityCompat.shouldShowRequestPermissionRationale(
+                            MainActivity.this, Manifest.permission.INTERNET)
+                    || ActivityCompat.shouldShowRequestPermissionRationale(
+                            MainActivity.this, Manifest.permission.ACCESS_NETWORK_STATE)
+
+            )
+            {
+
+                AlertDialog.Builder builder = new AlertDialog.Builder(MainActivity.this);
+                builder.setMessage("Read/Write External Storage and Internet Access Permissions needed.");
+
+                builder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        ActivityCompat.requestPermissions(
+                                MainActivity.this,
+                                new String[] {
+                                        Manifest.permission.READ_EXTERNAL_STORAGE,
+                                        Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                                        Manifest.permission.INTERNET,
+                                        Manifest.permission.ACCESS_NETWORK_STATE
+                                },
+                                MY_PERMISSIONS_REQUEST_CODE
+                                );
+                    }
+                });
+
+                builder.setNeutralButton("Cancel", null);
+                AlertDialog dialog = builder.create();
+                dialog.show();
+            }
+            else
+            {
+                //PERMISSIONS ALREADY GRANTED
+
+                ActivityCompat.requestPermissions(
+                        MainActivity.this,
+                        new String[] {
+                                Manifest.permission.READ_EXTERNAL_STORAGE,
+                                Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                                Manifest.permission.INTERNET,
+                                Manifest.permission.ACCESS_NETWORK_STATE
+                        },
+                        MY_PERMISSIONS_REQUEST_CODE
+                );
+
+                startApplication();
+            }
+
+        }
+        else
+        {
+            //PERMISSIONS ALREADY GRANTED
+            startApplication();
+        }
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch (requestCode)
+        {
+            case MY_PERMISSIONS_REQUEST_CODE:
+            {
+                if ((grantResults.length>0) && (grantResults[0]
+                                                + grantResults[1]
+                                                + grantResults[2]
+                                                + grantResults[3]
+                                                    == PackageManager.PERMISSION_GRANTED))
+                {
+                    Toast.makeText(getApplicationContext(),"Permissions granted.",Toast.LENGTH_SHORT).show();
+                    startApplication();
+                }
+                else
+                {
+                    Toast.makeText(getApplicationContext(),"Permissions denied.",Toast.LENGTH_SHORT).show();
+                }
+                return;
+            }
+        }
+    }
+
+    private void startApplication()
+    {
+
     }
 
     @Override
