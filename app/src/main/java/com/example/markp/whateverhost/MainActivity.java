@@ -23,15 +23,30 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import java.io.File;
+
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
 //region Permission Variables
 
+    public static MainActivity mainActivity;
 
     private static final int MY_PERMISSIONS_REQUEST_CODE = 1234;
 
+    public ViewPager myDeviceViewPager;
+    public ViewPager dropboxViewPager;
+    ConstraintLayout homepage;
+
     //endregion
+
+    //region FRAGMENTS VARIABLES
+
+    public SectionsStatePagerAdapter deviceListPagerAdapter;
+
+    public static DeviceListFragment deviceListFragment;
+
+    //endregio
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -162,7 +177,7 @@ public class MainActivity extends AppCompatActivity
 
     private void startApplication()
     {
-
+        mainActivity=this;
     }
 
     @Override
@@ -170,7 +185,11 @@ public class MainActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         if (drawer.isDrawerOpen(GravityCompat.START)) {
             drawer.closeDrawer(GravityCompat.START);
-        } else {
+        } else if (myDeviceViewPager.getVisibility()==View.VISIBLE)
+        {
+            deviceListFragment.setList(deviceListFragment.currentFolder.getParentFile());
+        } else
+        {
             super.onBackPressed();
         }
     }
@@ -219,6 +238,9 @@ public class MainActivity extends AppCompatActivity
 
         } else if (id == R.id.nav_send) {
 
+        } else if (id == R.id.homePage)
+        {
+            setHomepage();
         }
 
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
@@ -228,13 +250,13 @@ public class MainActivity extends AppCompatActivity
 
     private void hideAllContainers()
     {
-        ConstraintLayout welcomeLayout = findViewById(R.id.welcomeLayout);
-        welcomeLayout.setVisibility(View.GONE);
+        homepage = findViewById(R.id.welcomeLayout);
+        homepage.setVisibility(View.GONE);
 
-        ViewPager myDeviceViewPager = findViewById(R.id.myDeviceViewPager);
+        myDeviceViewPager = findViewById(R.id.myDeviceViewPager);
         myDeviceViewPager.setVisibility(View.GONE);
 
-        ViewPager dropboxViewPager = findViewById(R.id.dropboxViewpager);
+        dropboxViewPager = findViewById(R.id.dropboxViewpager);
         dropboxViewPager.setVisibility(View.GONE);
 
     }
@@ -243,16 +265,46 @@ public class MainActivity extends AppCompatActivity
     {
         hideAllContainers();
 
+        myDeviceViewPager = findViewById(R.id.myDeviceViewPager);
+
+        myDeviceViewPager.setVisibility(View.VISIBLE);
+
+        deviceListPagerAdapter = new SectionsStatePagerAdapter(getSupportFragmentManager());
+
+        deviceListFragment = new DeviceListFragment();
+
+        deviceListPagerAdapter.addFragment(deviceListFragment,"DeviceList");
+
+        myDeviceViewPager.setAdapter(deviceListPagerAdapter);
+
+    }
+
+    private void setHomepage()
+    {
+        hideAllContainers();
+
+        homepage=findViewById(R.id.welcomeLayout);
+
+        homepage.setVisibility(View.VISIBLE);
+    }
+
+    public void openFolder(File folder)
+    {
+        //add Fragment
+
+        DeviceListFragment list = new DeviceListFragment();
+
+        list.setList(folder);
+
+        deviceListPagerAdapter.addFragment(list,"Another page");
+
         ViewPager myDeviceViewPager = findViewById(R.id.myDeviceViewPager);
         myDeviceViewPager.setVisibility(View.VISIBLE);
 
-        SectionsStatePagerAdapter adapter = new SectionsStatePagerAdapter(getSupportFragmentManager());
+        int curr = myDeviceViewPager.getCurrentItem();
+        myDeviceViewPager.setCurrentItem(curr + 1);
 
-        DeviceListFragment fragment = new DeviceListFragment();
 
-        adapter.addFragment(fragment,"DeviceList");
-
-        myDeviceViewPager.setAdapter(adapter);
 
     }
 }

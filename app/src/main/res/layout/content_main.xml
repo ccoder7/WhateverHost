@@ -49,6 +49,7 @@
         android:id="@+id/myDeviceViewPager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="@color/colorPrimaryDark"
         android:visibility="invisible"></android.support.v4.view.ViewPager>
 
     <!--DROPBOX FILES VIEWPAGER-->
@@ -56,6 +57,7 @@
         android:id="@+id/dropboxViewpager"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
+        android:background="@color/colorPrimaryDark"
         android:visibility="invisible"></android.support.v4.view.ViewPager>
 
 

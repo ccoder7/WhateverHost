@@ -7,9 +7,11 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.TextView;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -17,6 +19,8 @@ import java.util.ArrayList;
 public class DeviceListFragment extends Fragment {
 
     public static ArrayList<File> filesList;
+
+    public File currentFolder;
 
     @Nullable
     @Override
@@ -33,13 +37,18 @@ public class DeviceListFragment extends Fragment {
         setList(Environment.getExternalStorageDirectory());
     }
 
-    private void setList(File parentFolder)
+    public void setList(File parentFolder)
     {
+
+        if (!parentFolder.canRead())
+        {
+            return;
+        }
+
+        currentFolder = parentFolder;
         //GET FILES FROM FOLDER
 
-        File testFile = new File("/storage/4B42-1A17/DCIM/Camera");
-        //File[] files = parentFolder.listFiles();
-        File[] files = testFile.listFiles();
+        File[] files = parentFolder.listFiles();
 
         filesList = new ArrayList<>();
 
@@ -52,10 +61,19 @@ public class DeviceListFragment extends Fragment {
         //INIT LIST
         RecyclerView myRv = (RecyclerView)((MainActivity)getActivity()).findViewById(R.id.deviceListView);
 
-        FileFolderAdapter myAdapter =new FileFolderAdapter(((MainActivity)getContext()),filesList);
+        FileFolderAdapter myAdapter;
 
-        myRv.setLayoutManager(new LinearLayoutManager(((MainActivity)getContext())));
+        myAdapter= new FileFolderAdapter((getContext()),filesList, this);
+
+
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager((getActivity()));
+        linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+        myRv.setLayoutManager(linearLayoutManager);
 
         myRv.setAdapter(myAdapter);
+
+        TextView folderPath = getActivity().findViewById(R.id.currentFolderText);
+
+        folderPath.setText(parentFolder.getAbsolutePath());
     }
 }
