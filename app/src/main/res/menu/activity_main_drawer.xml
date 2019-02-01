@@ -14,7 +14,7 @@
             android:icon="@drawable/ic_android_black_24dp"
             android:title="My Device" />
         <item
-            android:id="@+id/nav_dropbox_drawer"
+            android:id="@+id/nav_dropbox"
             android:icon="@drawable/ic_dropbox"
             android:title="Dropbox" />
         <item

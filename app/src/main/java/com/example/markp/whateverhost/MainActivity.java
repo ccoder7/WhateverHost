@@ -4,6 +4,7 @@ import android.Manifest;
 import android.content.DialogInterface;
 import android.content.pm.PackageManager;
 import android.os.Bundle;
+import android.os.NetworkOnMainThreadException;
 import android.support.annotation.NonNull;
 import android.support.constraint.ConstraintLayout;
 import android.support.design.widget.FloatingActionButton;
@@ -12,6 +13,7 @@ import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.view.ViewPager;
 import android.support.v7.app.AlertDialog;
+import android.util.Log;
 import android.view.View;
 import android.support.design.widget.NavigationView;
 import android.support.v4.view.GravityCompat;
@@ -23,30 +25,45 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.widget.Toast;
 
+import com.dropbox.core.DbxException;
+import com.dropbox.core.DbxRequestConfig;
+import com.dropbox.core.v2.DbxClientV2;
+import com.dropbox.core.v2.users.FullAccount;
+
 import java.io.File;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
 
-//region Permission Variables
-
     public static MainActivity mainActivity;
+
+    //region Permission Variables
+
+    private static final String DROPBOX_ACCESS_TOKEN = "";
 
     private static final int MY_PERMISSIONS_REQUEST_CODE = 1234;
 
-    public ViewPager myDeviceViewPager;
-    public ViewPager dropboxViewPager;
-    ConstraintLayout homepage;
+
+    //DROPBOX
+
+    public DbxRequestConfig config;
+    public DbxClientV2 client;
+    public FullAccount account;
 
     //endregion
 
     //region FRAGMENTS VARIABLES
+    public ViewPager myDeviceViewPager;
+    public ViewPager dropboxViewPager;
+    ConstraintLayout homepage;
 
-    public SectionsStatePagerAdapter deviceListPagerAdapter;
+    public SectionsStatePagerAdapter deviceListPagerAdapter, dropboxPagerAdapter;
 
     public static DeviceListFragment deviceListFragment;
 
-    //endregio
+    public static DropboxListFragment dropboxListFragment;
+
+    //endregion
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -77,6 +94,7 @@ public class MainActivity extends AppCompatActivity
 
         getPermissions();
 
+        new DropboxConnectTask().execute(this);
     }
 
     private void getPermissions()
@@ -224,8 +242,13 @@ public class MainActivity extends AppCompatActivity
 
         if (id == R.id.nav_google_drive) {
             // Handle the camera action
-        } else if (id == R.id.nav_dropbox_drawer) {
+        } else if (id == R.id.nav_dropbox)
+        {
+            //new DropboxConnectTask().execute(this);
 
+            //setDropboxListView();
+
+            new DropboxRetrieveTask().execute(this);
         } else if (id == R.id.nav_device)
         {
             //Show list of device files
@@ -246,6 +269,26 @@ public class MainActivity extends AppCompatActivity
         DrawerLayout drawer = (DrawerLayout) findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    public void accessDropbox()
+    {
+        config = DbxRequestConfig.newBuilder("dropbox/Whatever-Host").build();
+        client = new DbxClientV2(config, DROPBOX_ACCESS_TOKEN);
+        try
+        {
+            account = client.users().getCurrentAccount();
+        }catch (DbxException e)
+        {
+            Log.d("1st","login exception");
+            Log.d("Error",e.getRequestId());
+        }
+        catch (NetworkOnMainThreadException e)
+        {
+            Log.d("1st - 2","login exception");
+            Log.d("Error",e.getMessage());
+        }
+
     }
 
     private void hideAllContainers()
@@ -276,6 +319,31 @@ public class MainActivity extends AppCompatActivity
         deviceListPagerAdapter.addFragment(deviceListFragment,"DeviceList");
 
         myDeviceViewPager.setAdapter(deviceListPagerAdapter);
+
+    }
+
+    public void setDropboxListView()
+    {
+
+        dropboxViewPager = findViewById(R.id.dropboxViewpager);
+
+
+        dropboxPagerAdapter = new SectionsStatePagerAdapter(getSupportFragmentManager());
+
+        dropboxListFragment = new DropboxListFragment();
+
+
+        runOnUiThread(new Runnable() {
+            @Override
+            public void run() {
+                hideAllContainers();
+                dropboxViewPager.setVisibility(View.VISIBLE);
+
+                dropboxPagerAdapter.addFragment(dropboxListFragment,"DropboxFragment");
+
+                dropboxViewPager.setAdapter(dropboxPagerAdapter);
+            }
+        });
 
     }
 
