@@ -1,4 +1,4 @@
-package com.example.markp.whateverhost;
+package com.example.markp.whateverhost.fragments;
 
 import android.os.Bundle;
 import android.support.annotation.NonNull;
@@ -15,8 +15,10 @@ import android.widget.TextView;
 import com.dropbox.core.DbxException;
 import com.dropbox.core.v2.files.ListFolderResult;
 import com.dropbox.core.v2.files.Metadata;
+import com.example.markp.whateverhost.MainActivity;
+import com.example.markp.whateverhost.R;
+import com.example.markp.whateverhost.adapters.DropboxFileAdapter;
 
-import java.io.File;
 import java.util.ArrayList;
 
 public class DropboxListFragment extends Fragment

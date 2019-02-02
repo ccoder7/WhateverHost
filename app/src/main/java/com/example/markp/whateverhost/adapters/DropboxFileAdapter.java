@@ -1,4 +1,4 @@
-package com.example.markp.whateverhost;
+package com.example.markp.whateverhost.adapters;
 
 import android.content.Context;
 import android.support.annotation.NonNull;
@@ -10,7 +10,8 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.TextView;
 
-import java.io.File;
+import com.example.markp.whateverhost.R;
+
 import java.util.ArrayList;
 
 public class DropboxFileAdapter extends RecyclerView.Adapter<DropboxFileAdapter.MyViewHolder>

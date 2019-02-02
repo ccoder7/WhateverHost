@@ -1,4 +1,4 @@
-package com.example.markp.whateverhost;
+package com.example.markp.whateverhost.adapters;
 
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentManager;

@@ -29,6 +29,11 @@ import com.dropbox.core.DbxException;
 import com.dropbox.core.DbxRequestConfig;
 import com.dropbox.core.v2.DbxClientV2;
 import com.dropbox.core.v2.users.FullAccount;
+import com.example.markp.whateverhost.adapters.SectionsStatePagerAdapter;
+import com.example.markp.whateverhost.fragments.DeviceListFragment;
+import com.example.markp.whateverhost.fragments.DropboxListFragment;
+import com.example.markp.whateverhost.tasks.DropboxConnectTask;
+import com.example.markp.whateverhost.tasks.DropboxRetrieveTask;
 
 import java.io.File;
 
@@ -94,7 +99,21 @@ public class MainActivity extends AppCompatActivity
 
         getPermissions();
 
-        new DropboxConnectTask().execute(this);
+        try
+        {
+            if (new DropboxConnectTask().execute(this).get())
+            {
+                //SING IN OK
+                Toast.makeText(getApplicationContext(),"Sign in to Dropbox successful!",Toast.LENGTH_SHORT).show();
+            }
+            else
+            {
+                Toast.makeText(getApplicationContext(),"Could not sign in to Dropbox",Toast.LENGTH_SHORT).show();
+            }
+        }catch (Exception e)
+        {
+            Log.d("Dropbox sign-in error","Error while signing in to Dropbox");
+        }
     }
 
     private void getPermissions()
@@ -271,22 +290,26 @@ public class MainActivity extends AppCompatActivity
         return true;
     }
 
-    public void accessDropbox()
+    public boolean accessDropbox()
     {
         config = DbxRequestConfig.newBuilder("dropbox/Whatever-Host").build();
         client = new DbxClientV2(config, DROPBOX_ACCESS_TOKEN);
         try
         {
             account = client.users().getCurrentAccount();
+
+            return true;
         }catch (DbxException e)
         {
             Log.d("1st","login exception");
             Log.d("Error",e.getRequestId());
+            return false;
         }
         catch (NetworkOnMainThreadException e)
         {
             Log.d("1st - 2","login exception");
             Log.d("Error",e.getMessage());
+            return false;
         }
 
     }
