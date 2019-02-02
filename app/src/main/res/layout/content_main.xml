@@ -8,29 +8,59 @@
     tools:context=".MainActivity"
     tools:showIn="@layout/app_bar_main">
 
-    <TextView
-        android:id="@+id/textView2"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:textColor="@color/colorPrimary"
-        android:text="Welcome to Whatever! - Host"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintLeft_toLeftOf="parent"
-        app:layout_constraintRight_toRightOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
 
-    <TextView
-        android:layout_width="0dp"
-        app:layout_constraintWidth_percent="0.8"
-        android:layout_height="wrap_content"
-        android:layout_marginStart="8dp"
-        android:layout_marginTop="12dp"
-        android:layout_marginEnd="8dp"
-        android:textColor="@color/colorPrimary"
-        android:text="Sign in to your hosting services from the menu to get started!"
-        android:gravity="center"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/textView2" />
+    <!--WELCOME LAYOUT-->
+    <android.support.constraint.ConstraintLayout
+        android:id="@+id/welcomeLayout"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <TextView
+            android:id="@+id/textView2"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="@color/colorPrimary"
+            android:text="Welcome to Whatever! - Host"
+            app:layout_constraintBottom_toBottomOf="parent"
+            app:layout_constraintLeft_toLeftOf="parent"
+            app:layout_constraintRight_toRightOf="parent"
+            app:layout_constraintTop_toTopOf="parent" />
+
+        <TextView
+            android:layout_width="0dp"
+            app:layout_constraintWidth_percent="0.8"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:layout_marginTop="12dp"
+            android:layout_marginEnd="8dp"
+            android:textColor="@color/colorPrimary"
+            android:text="Sign in to your hosting services from the menu to get started!"
+            android:gravity="center"
+            app:layout_constraintEnd_toEndOf="parent"
+            app:layout_constraintStart_toStartOf="parent"
+            app:layout_constraintTop_toBottomOf="@+id/textView2" />
+
+
+    </android.support.constraint.ConstraintLayout>
+
+
+    <!--MY DEVICE FILES VIEWPAGER-->
+    <android.support.v4.view.ViewPager
+        android:id="@+id/myDeviceViewPager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/colorPrimaryDark"
+        android:visibility="invisible"></android.support.v4.view.ViewPager>
+
+    <!--DROPBOX FILES VIEWPAGER-->
+    <android.support.v4.view.ViewPager
+        android:id="@+id/dropboxViewpager"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:background="@color/colorPrimaryDark"
+        android:visibility="invisible"></android.support.v4.view.ViewPager>
+
+
+
 
 </android.support.constraint.ConstraintLayout>
