@@ -25,4 +25,8 @@ public abstract class CustomFile
         return filePath;
     }
 
+    public CustomFile(String fileName, String filePath) {
+        this.fileName = fileName;
+        this.filePath = filePath;
+    }
 }

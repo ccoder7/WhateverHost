@@ -18,12 +18,12 @@ import com.dropbox.core.v2.files.Metadata;
 import com.example.markp.whateverhost.MainActivity;
 import com.example.markp.whateverhost.R;
 import com.example.markp.whateverhost.adapters.DropboxFileAdapter;
+import com.example.markp.whateverhost.tasks.DropboxRetrieveTask;
 
 import java.util.ArrayList;
 
 public class DropboxListFragment extends Fragment
 {
-    public String path;
 
     @Nullable
     @Override
@@ -37,50 +37,53 @@ public class DropboxListFragment extends Fragment
     public void onViewCreated(@NonNull View view, @Nullable Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
 
-        setList("");
 
-        //new DropboxRetrieveTask().execute(this);
+        try
+        {
+            MainActivity.mainActivity.dropboxFiles = new DropboxRetrieveTask().execute("").get();
+
+            setDropboxAdapters("");
+
+
+        }
+        catch (Exception e)
+        {
+
+        }
+
     }
 
-    public void setList(String path)
+    public void updateAdapterPath(String path)
     {
         try
         {
-            ListFolderResult result = MainActivity.mainActivity.client.files().listFolder("");
+            MainActivity.mainActivity.dropboxFiles = new DropboxRetrieveTask().execute(path).get();
 
-            ArrayList<String> fileList = new ArrayList<>();
-            ArrayList<String> fileDate = new ArrayList<>();
-
-            while (true)
-            {
-                for (Metadata metadata : result.getEntries())
-                {
-                    fileList.add(metadata.getName());
-                    fileDate.add("");
-
-                    RecyclerView myRv = (RecyclerView)((MainActivity)getActivity()).findViewById(R.id.dropboxListView);
-
-                    DropboxFileAdapter adapter = new DropboxFileAdapter(getContext(),fileList,fileDate,this);
-
-                    LinearLayoutManager linearLayoutManager = new LinearLayoutManager((getActivity()));
-                    linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
-                    myRv.setLayoutManager(linearLayoutManager);
-
-                    myRv.setAdapter(adapter);
-
-                    TextView folderPath = getActivity().findViewById(R.id.currentDropboxFolderText);
-
-                    folderPath.setText(metadata.getPathDisplay());
-                }
-            }
-
+            setDropboxAdapters(path);
 
 
         }
-        catch (DbxException e)
+        catch (Exception e)
         {
-            Log.d("2nd","retrieve files exception");
-            Log.d("Error 2",e.getRequestId());
+            Log.d("Exception","mothafucking exception");
         }
     }
+
+    private void setDropboxAdapters(String path)
+    {
+        RecyclerView myRv = ((MainActivity)getActivity()).findViewById(R.id.dropboxListView);
+
+        DropboxFileAdapter adapter = new DropboxFileAdapter(getContext(),((MainActivity)getActivity()).dropboxFiles,this);
+
+        LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity());
+        linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
+        myRv.setLayoutManager(linearLayoutManager);
+
+        myRv.setAdapter(adapter);
+
+        TextView folderPath = ((MainActivity)getActivity()).findViewById(R.id.currentDropboxFolderText);
+
+        folderPath.setText(path);
+    }
+
 }

@@ -4,6 +4,7 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -11,22 +12,22 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.example.markp.whateverhost.R;
+import com.example.markp.whateverhost.files.DropboxFile;
+import com.example.markp.whateverhost.fragments.DropboxListFragment;
 
 import java.util.ArrayList;
 
 public class DropboxFileAdapter extends RecyclerView.Adapter<DropboxFileAdapter.MyViewHolder>
 {
     Context mContext;
-    ArrayList<String> fileList;
-    ArrayList<String> fileDates;
-    Fragment fragment;
+    ArrayList<DropboxFile> dropboxFiles;
+    DropboxListFragment fragment;
 
 
-    public DropboxFileAdapter(Context mContext, ArrayList<String> fileList, ArrayList<String> fileDates, Fragment fragment) {
+    public DropboxFileAdapter(Context mContext, ArrayList<DropboxFile> dropboxFiles, DropboxListFragment fragment) {
         this.mContext = mContext;
-        this.fileList = fileList;
-        this.fileDates = fileDates;
         this.fragment = fragment;
+        this.dropboxFiles = dropboxFiles;
     }
 
     @NonNull
@@ -44,13 +45,54 @@ public class DropboxFileAdapter extends RecyclerView.Adapter<DropboxFileAdapter.
 
         final int position = i;
 
-        myViewHolder.dropboxFileName.setText(fileList.get(position));
-        myViewHolder.dropboxFileDate.setText(fileList.get(position));
+        myViewHolder.dropboxFileName.setText(dropboxFiles.get(position).getFileName());
+        myViewHolder.dropboxFileDate.setText(dropboxFiles.get(position).getFilePath());
+
+        myViewHolder.dropboxFileDate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+
+                //Check if folder to navigate to it
+
+
+
+                fragment.updateAdapterPath(dropboxFiles.get(position).getFilePath()+"/Test");
+
+                //if file --> prompt to download
+
+            }
+        });
+
+        myViewHolder.dropboxFileName.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Check if folder to navigate to it
+
+
+
+                fragment.updateAdapterPath(dropboxFiles.get(position).getFilePath());
+
+                //if file --> prompt to download
+            }
+        });
+
+        myViewHolder.dropboxTypeImage.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                //Check if folder to navigate to it
+
+
+
+                fragment.updateAdapterPath(dropboxFiles.get(position).getFilePath());
+
+                //if file --> prompt to download
+            }
+        });
     }
 
     @Override
     public int getItemCount() {
-        return fileList.size();
+        return dropboxFiles.size();
     }
 
     public static class MyViewHolder extends  RecyclerView.ViewHolder

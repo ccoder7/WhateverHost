@@ -18,7 +18,8 @@
         android:layout_height="100dp"
         android:contentDescription="@string/nav_header_desc"
         android:paddingTop="@dimen/nav_header_vertical_spacing"
-        app:srcCompat="@drawable/ic_user" />
+        app:srcCompat="@drawable/ic_user"
+        android:layout_gravity="center"/>
 
     <TextView
         android:layout_width="match_parent"
@@ -27,7 +28,9 @@
         android:text="Whatever! - Connect your file hosting providers"
         android:textColor="@color/colorPrimary"
         android:textStyle="bold"
-        android:textAppearance="@style/TextAppearance.AppCompat.Body1" />
+        android:textAppearance="@style/TextAppearance.AppCompat.Body1"
+        android:layout_gravity="center"
+        android:gravity="center"/>
 
 
 </LinearLayout>
