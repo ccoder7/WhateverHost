@@ -41,6 +41,7 @@ import com.example.markp.whateverhost.adapters.SectionsStatePagerAdapter;
 import com.example.markp.whateverhost.files.DropboxFile;
 import com.example.markp.whateverhost.fragments.DeviceListFragment;
 import com.example.markp.whateverhost.fragments.DropboxListFragment;
+import com.example.markp.whateverhost.fragments.GoogleDriveListFragment;
 import com.example.markp.whateverhost.tasks.DropboxConnectTask;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -52,22 +53,9 @@ import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-import com.google.api.client.auth.oauth2.Credential;
-import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow;
-import com.google.api.client.googleapis.auth.oauth2.GoogleClientSecrets;
-import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
-import com.google.api.client.http.javanet.NetHttpTransport;
-import com.google.api.client.json.JsonFactory;
-import com.google.api.client.json.jackson2.JacksonFactory;
-import com.google.api.client.util.store.FileDataStoreFactory;
 
-import java.io.File;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
+
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -116,18 +104,21 @@ public class MainActivity extends AppCompatActivity
 
     //endregion
 
-    //region FRAGMENTS VARIABLES
+    //region Fragment Variables
 
 
     public ViewPager myDeviceViewPager;
     public ViewPager dropboxViewPager;
+    public ViewPager googleDriveViewPager;
     ConstraintLayout homepage;
 
-    public SectionsStatePagerAdapter deviceListPagerAdapter, dropboxPagerAdapter;
+    public SectionsStatePagerAdapter deviceListPagerAdapter, dropboxPagerAdapter, googleDrivePagerAdapter;
 
     public static DeviceListFragment deviceListFragment;
 
     public static DropboxListFragment dropboxListFragment;
+
+    public static GoogleDriveListFragment googleDriveListFragment;
 
     //endregion
 
@@ -180,7 +171,7 @@ public class MainActivity extends AppCompatActivity
 
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
                 .requestScopes(new Scope(Scopes.DRIVE_APPFOLDER))
-                .requestServerAuthCode(getString(R.string.server_auth_code)).requestEmail().build();
+                .requestServerAuthCode(getString(R.string.server_client_id)).requestEmail().build();
 
         mGoogleSignInClient = GoogleSignIn.getClient(this,gso);
 
@@ -355,7 +346,6 @@ public class MainActivity extends AppCompatActivity
 
     //endregion
 
-
     //region Access file hosting services
 
 
@@ -432,6 +422,8 @@ public class MainActivity extends AppCompatActivity
         {
             googleAccount = completedTask.getResult(ApiException.class);
 
+            Button googleDriveButton = findViewById(R.id.googleDriveSignInButton);
+            googleDriveButton.setText(googleAccount.getDisplayName());
             //successfully signed in
             isSignedInGoogleDrive=true;
             Toast.makeText(getApplicationContext(),"Signed into GoogleDrive.",Toast.LENGTH_SHORT).show();
@@ -449,8 +441,6 @@ public class MainActivity extends AppCompatActivity
         Intent signInIntent = mGoogleSignInClient.getSignInIntent();
         startActivityForResult(signInIntent,RC_SIGN_IN);
 
-        Button googleDriveButton = findViewById(R.id.googleDriveSignInButton);
-        googleDriveButton.setText("Signed in");
     }
 
     private void signOutGoogleDrive()
@@ -475,8 +465,6 @@ public class MainActivity extends AppCompatActivity
 
     //endregion
 
-
-
     //region Containers
 
     private void hideAllContainers()
@@ -489,6 +477,9 @@ public class MainActivity extends AppCompatActivity
 
         dropboxViewPager = findViewById(R.id.dropboxViewpager);
         dropboxViewPager.setVisibility(View.GONE);
+
+        googleDriveViewPager = findViewById(R.id.googleDriveViewPager);
+        googleDriveViewPager.setVisibility(View.GONE);
 
     }
 
@@ -531,7 +522,19 @@ public class MainActivity extends AppCompatActivity
 
     public void setGoogleDriveView()
     {
+        googleDriveListFragment = new GoogleDriveListFragment();
 
+        hideAllContainers();
+
+        googleDriveViewPager = findViewById(R.id.googleDriveViewPager);
+
+        googleDriveViewPager.setVisibility(View.VISIBLE);
+
+        googleDrivePagerAdapter = new SectionsStatePagerAdapter(getSupportFragmentManager());
+
+        googleDrivePagerAdapter.addFragment(googleDriveListFragment,"GoogleDriveFragment");
+
+        googleDriveViewPager.setAdapter(googleDrivePagerAdapter);
     }
 
     private void setHomepage()
@@ -544,7 +547,6 @@ public class MainActivity extends AppCompatActivity
     }
 
     //endregion
-
 
     //region Button clicks and UI
 
