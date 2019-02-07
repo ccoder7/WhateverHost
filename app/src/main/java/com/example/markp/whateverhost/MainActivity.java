@@ -96,7 +96,7 @@ public class MainActivity extends AppCompatActivity
 
     private GoogleSignInClient mGoogleSignInClient;
 
-    private GoogleSignInAccount googleAccount;
+    public GoogleSignInAccount googleAccount;
 
     private static final int RC_SIGN_IN = 9001;
 
@@ -170,8 +170,8 @@ public class MainActivity extends AppCompatActivity
         Button googleDriveSignInButton = findViewById(R.id.googleDriveSignInButton);
 
         GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestScopes(new Scope(Scopes.DRIVE_APPFOLDER))
-                .requestServerAuthCode(getString(R.string.server_client_id)).requestEmail().build();
+                .requestScopes(new Scope(Scopes.DRIVE_FULL))
+                .requestIdToken(getString(R.string.server_client_id)).requestEmail().build();
 
         mGoogleSignInClient = GoogleSignIn.getClient(this,gso);
 
@@ -191,7 +191,7 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        checkSignedInAccounts();
+        //checkSignedInAccounts();
 
         getPermissions();
 
@@ -204,6 +204,8 @@ public class MainActivity extends AppCompatActivity
         SharedPreferences sp = this.getPreferences(Context.MODE_PRIVATE);
 
         DROPBOX_ACCESS_TOKEN = sp.getString("dropboxToken",null);
+
+        DROPBOX_ACCESS_TOKEN=null;
 
         if (DROPBOX_ACCESS_TOKEN!=null)
         {
