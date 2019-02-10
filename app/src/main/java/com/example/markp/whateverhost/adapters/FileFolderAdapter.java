@@ -4,12 +4,15 @@ import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
 import android.view.LayoutInflater;
+import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ImageView;
+import android.widget.PopupMenu;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.example.markp.whateverhost.MainActivity;
 import com.example.markp.whateverhost.fragments.DeviceListFragment;
 import com.example.markp.whateverhost.R;
 
@@ -93,6 +96,70 @@ public class FileFolderAdapter extends RecyclerView.Adapter<FileFolderAdapter.My
             @Override
             public void onClick(View v) {
                 handleClick(position);
+            }
+        });
+
+        myViewHolder.name.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+
+                PopupMenu popupMenu = new PopupMenu(MainActivity.mainActivity,v);
+
+                popupMenu.getMenuInflater().inflate(R.menu.popup_menu_device,popupMenu.getMenu());
+
+                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                    @Override
+                    public boolean onMenuItemClick(MenuItem item) {
+                        return false;
+                    }
+                });
+
+                popupMenu.show();
+
+
+                return true;
+            }
+        });
+
+        myViewHolder.typeImage.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                PopupMenu popupMenu = new PopupMenu(MainActivity.mainActivity,v);
+
+                popupMenu.getMenuInflater().inflate(R.menu.popup_menu_device,popupMenu.getMenu());
+
+                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                    @Override
+                    public boolean onMenuItemClick(MenuItem item) {
+                        return false;
+                    }
+                });
+
+                popupMenu.show();
+
+
+                return true;
+            }
+        });
+
+        myViewHolder.date.setOnLongClickListener(new View.OnLongClickListener() {
+            @Override
+            public boolean onLongClick(View v) {
+                PopupMenu popupMenu = new PopupMenu(MainActivity.mainActivity,v);
+
+                popupMenu.getMenuInflater().inflate(R.menu.popup_menu_device,popupMenu.getMenu());
+
+                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+                    @Override
+                    public boolean onMenuItemClick(MenuItem item) {
+                        return false;
+                    }
+                });
+
+                popupMenu.show();
+
+
+                return true;
             }
         });
     }

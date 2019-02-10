@@ -1,6 +1,7 @@
 package com.example.markp.whateverhost;
 
 import android.Manifest;
+import android.app.Activity;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -39,9 +40,12 @@ import com.dropbox.core.v2.files.Metadata;
 import com.dropbox.core.v2.users.FullAccount;
 import com.example.markp.whateverhost.adapters.SectionsStatePagerAdapter;
 import com.example.markp.whateverhost.files.DropboxFile;
+import com.example.markp.whateverhost.files.GoogleDriveFile;
+import com.example.markp.whateverhost.files.OneDriveFile;
 import com.example.markp.whateverhost.fragments.DeviceListFragment;
 import com.example.markp.whateverhost.fragments.DropboxListFragment;
 import com.example.markp.whateverhost.fragments.GoogleDriveListFragment;
+import com.example.markp.whateverhost.fragments.OneDriveListFragment;
 import com.example.markp.whateverhost.tasks.DropboxConnectTask;
 
 import com.google.android.gms.auth.api.signin.GoogleSignIn;
@@ -49,13 +53,27 @@ import com.google.android.gms.auth.api.signin.GoogleSignInAccount;
 import com.google.android.gms.auth.api.signin.GoogleSignInClient;
 import com.google.android.gms.auth.api.signin.GoogleSignInOptions;
 import com.google.android.gms.common.Scopes;
-import com.google.android.gms.common.api.ApiException;
 import com.google.android.gms.common.api.Scope;
 import com.google.android.gms.tasks.OnCompleteListener;
 import com.google.android.gms.tasks.Task;
-
+import com.google.api.services.drive.Drive;
+import com.google.api.client.extensions.android.http.AndroidHttp;
+import com.google.api.client.googleapis.extensions.android.gms.auth.GoogleAccountCredential;
+import com.google.api.client.json.gson.GsonFactory;
+import com.google.api.services.drive.DriveScopes;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.concurrent.atomic.AtomicReference;
+
+import com.onedrive.sdk.authentication.MSAAuthenticator;
+import com.onedrive.sdk.concurrency.ICallback;
+import com.onedrive.sdk.core.ClientException;
+import com.onedrive.sdk.core.DefaultClientConfig;
+import com.onedrive.sdk.core.IClientConfig;
+import com.onedrive.sdk.extensions.IOneDriveClient;
+import com.onedrive.sdk.extensions.Item;
+import com.onedrive.sdk.extensions.OneDriveClient;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -67,6 +85,8 @@ public class MainActivity extends AppCompatActivity
     boolean isSignedInDropbox = false;
 
     boolean isSignedInGoogleDrive = false;
+
+    boolean isSignedInOneDrive = false;
 
 
     //endregion
@@ -100,7 +120,30 @@ public class MainActivity extends AppCompatActivity
 
     private static final int RC_SIGN_IN = 9001;
 
+    public ArrayList<GoogleDriveFile> googleDriveFiles;
+
     //endregion
+
+    //region ONEDRIVE
+
+    final MSAAuthenticator msaAuthenticator = new MSAAuthenticator() {
+        @Override
+        public String getClientId() {
+            return getString(R.string.ondrive_client_id);
+        }
+
+        @Override
+        public String[] getScopes() {
+            return new String[] {"onedrive.readwrite", "onedrive.appfolder", "wl.offline_access"};
+        }
+    };
+
+    public AtomicReference<IOneDriveClient> mOneDriveClient = new AtomicReference<>();
+
+    public ArrayList<OneDriveFile> oneDriveFiles;
+
+    //endregion
+
 
     //endregion
 
@@ -110,15 +153,18 @@ public class MainActivity extends AppCompatActivity
     public ViewPager myDeviceViewPager;
     public ViewPager dropboxViewPager;
     public ViewPager googleDriveViewPager;
+    public ViewPager oneDriveViewPager;
     ConstraintLayout homepage;
 
-    public SectionsStatePagerAdapter deviceListPagerAdapter, dropboxPagerAdapter, googleDrivePagerAdapter;
+    public SectionsStatePagerAdapter deviceListPagerAdapter, dropboxPagerAdapter, googleDrivePagerAdapter, oneDrivePagerAdapter;
 
     public static DeviceListFragment deviceListFragment;
 
     public static DropboxListFragment dropboxListFragment;
 
     public static GoogleDriveListFragment googleDriveListFragment;
+
+    public static OneDriveListFragment oneDriveListFragment;
 
     //endregion
 
@@ -158,6 +204,7 @@ public class MainActivity extends AppCompatActivity
                 if (isSignedInDropbox)
                 {
                     setDropboxListView();
+                    navigationView.getMenu().getItem(2).setChecked(true);
                 }
                 else
                 {
@@ -169,11 +216,7 @@ public class MainActivity extends AppCompatActivity
 
         Button googleDriveSignInButton = findViewById(R.id.googleDriveSignInButton);
 
-        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
-                .requestScopes(new Scope(Scopes.DRIVE_FULL))
-                .requestIdToken(getString(R.string.server_client_id)).requestEmail().build();
 
-        mGoogleSignInClient = GoogleSignIn.getClient(this,gso);
 
         googleDriveSignInButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -182,6 +225,7 @@ public class MainActivity extends AppCompatActivity
                 if (isSignedInGoogleDrive)
                 {
                     setGoogleDriveView();
+                    navigationView.getMenu().getItem(3).setChecked(true);
                 }
                 else
                 {
@@ -191,7 +235,24 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        //checkSignedInAccounts();
+        Button oneDriveSignInButton = findViewById(R.id.oneDriveSignInButton);
+
+        oneDriveSignInButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if (isSignedInOneDrive)
+                {
+                    setOneDriveView();
+                    navigationView.getMenu().getItem(4).setChecked(true);
+                }
+                else
+                {
+                    signInOneDrive();
+                }
+            }
+        });
+
+        checkSignedInAccounts();
 
         getPermissions();
 
@@ -201,14 +262,16 @@ public class MainActivity extends AppCompatActivity
     {
         //RETRIEVE ACCOUNTS
 
+
+        //region Dropbox
+
         SharedPreferences sp = this.getPreferences(Context.MODE_PRIVATE);
 
         DROPBOX_ACCESS_TOKEN = sp.getString("dropboxToken",null);
 
-        DROPBOX_ACCESS_TOKEN=null;
-
         if (DROPBOX_ACCESS_TOKEN!=null)
         {
+            Log.d("TOKEN",DROPBOX_ACCESS_TOKEN);
             try
             {
                 if (new DropboxConnectTask().execute(this).get())
@@ -227,19 +290,57 @@ public class MainActivity extends AppCompatActivity
 
             }
 
-            GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+
 
             //UPDATE INFO
 
         }
 
+        //endregion
 
-        //GOOGLE DRIVE
+        //region Google Drive
 
-        if (true)
+        GoogleSignInAccount account = GoogleSignIn.getLastSignedInAccount(this);
+
+        if (account!=null)
         {
-            //Already signed in
+            googleAccount = account;
+
+            Button googleDriveButton = findViewById(R.id.googleDriveSignInButton);
+            googleDriveButton.setText(googleAccount.getDisplayName());
+
+            GoogleAccountCredential credential =
+                    GoogleAccountCredential.usingOAuth2(
+                            this, Collections.singleton(DriveScopes.DRIVE_FILE));
+            credential.setSelectedAccount(googleAccount.getAccount());
+            Drive googleDriveService =
+                    new Drive.Builder(
+                            AndroidHttp.newCompatibleTransport(),
+                            new GsonFactory(),
+                            credential)
+                            .setApplicationName("Drive API Migration")
+                            .build();
+
+            // The DriveServiceHelper encapsulates all REST API and SAF functionality.
+            // Its instantiation is required before handling any onClick actions.
+            mDriveServiceHelper = new DriveServiceHelper(googleDriveService);
+
+            isSignedInGoogleDrive=true;
         }
+
+        //endregion
+
+        //region OneDrive
+
+        String hasSignedInOneDrive = sp.getString("onedriveToken",null);
+
+        if (hasSignedInOneDrive!=null)
+        {
+            signInOneDrive();
+        }
+
+        //endregion
+
     }
 
 
@@ -418,30 +519,60 @@ public class MainActivity extends AppCompatActivity
 
     //region GoogleDrive
 
-    private void handleSignInResult(Task<GoogleSignInAccount> completedTask)
+
+    public String TAG = "MainActivity";
+    private void handleSignInResult(Intent result)
     {
-        try
-        {
-            googleAccount = completedTask.getResult(ApiException.class);
+        GoogleSignIn.getSignedInAccountFromIntent(result)
+                .addOnSuccessListener(googleAccount -> {
+                    Log.d(TAG, "Signed in as " + googleAccount.getEmail());
 
-            Button googleDriveButton = findViewById(R.id.googleDriveSignInButton);
-            googleDriveButton.setText(googleAccount.getDisplayName());
-            //successfully signed in
-            isSignedInGoogleDrive=true;
-            Toast.makeText(getApplicationContext(),"Signed into GoogleDrive.",Toast.LENGTH_SHORT).show();
-        }
-        catch (ApiException e)
-        {
-            Log.d("GoogleDrive","signInResult:failed code=" + e.getStatusCode());
+                    // Use the authenticated account to sign in to the Drive service.
+                    GoogleAccountCredential credential =
+                            GoogleAccountCredential.usingOAuth2(
+                                    this, Collections.singleton(DriveScopes.DRIVE_FILE));
+                    credential.setSelectedAccount(googleAccount.getAccount());
+                    Drive googleDriveService =
+                            new Drive.Builder(
+                                    AndroidHttp.newCompatibleTransport(),
+                                    new GsonFactory(),
+                                    credential)
+                                    .setApplicationName("Drive API Migration")
+                                    .build();
 
-            //not signed in
-        }
+                    // The DriveServiceHelper encapsulates all REST API and SAF functionality.
+                    // Its instantiation is required before handling any onClick actions.
+                    mDriveServiceHelper = new DriveServiceHelper(googleDriveService);
+
+
+                    Button googleDriveButton = findViewById(R.id.googleDriveSignInButton);
+                    googleDriveButton.setText(googleAccount.getDisplayName());
+                    //successfully signed in
+                    isSignedInGoogleDrive=true;
+                    Toast.makeText(getApplicationContext(),"Signed into GoogleDrive.",Toast.LENGTH_SHORT).show();
+
+                })
+                .addOnFailureListener(exception -> Log.e(TAG, "Unable to sign in.", exception));
     }
+
+
+    public DriveServiceHelper mDriveServiceHelper;
+
 
     private void signInGoogleDrive()
     {
-        Intent signInIntent = mGoogleSignInClient.getSignInIntent();
-        startActivityForResult(signInIntent,RC_SIGN_IN);
+        //Intent signInIntent = mGoogleSignInClient.getSignInIntent();
+        //startActivityForResult(signInIntent,RC_SIGN_IN);
+
+
+        GoogleSignInOptions gso = new GoogleSignInOptions.Builder(GoogleSignInOptions.DEFAULT_SIGN_IN)
+                .requestScopes(new Scope(Scopes.DRIVE_FILE))
+                .requestIdToken(getString(R.string.server_client_id)).requestEmail().build();
+
+        mGoogleSignInClient = GoogleSignIn.getClient(this,gso);
+
+        startActivityForResult(mGoogleSignInClient.getSignInIntent(),RC_SIGN_IN);
+
 
     }
 
@@ -458,10 +589,64 @@ public class MainActivity extends AppCompatActivity
         });
     }
 
-    public boolean accessGoogleDrive()
+
+    //endregion
+
+    //region One Drive
+
+    public IClientConfig oneDriveConfig;
+
+    final DefaultCallback<IOneDriveClient> oneDriveCallback = new DefaultCallback<IOneDriveClient>(this) {
+        @Override
+        public void success(final IOneDriveClient result) {
+            // OneDrive client created successfully.
+
+
+            mOneDriveClient = new AtomicReference<>(result);
+            Toast.makeText(getApplicationContext(),"Signed into OneDrive.",Toast.LENGTH_SHORT).show();
+
+            Button oneDriveButton = findViewById(R.id.oneDriveSignInButton);
+
+            SharedPreferences sp = getPreferences(Context.MODE_PRIVATE);
+
+            SharedPreferences.Editor editor = sp.edit();
+
+            editor.putString("onedriveToken","true");
+
+            editor.commit();
+
+            isSignedInOneDrive=true;
+
+            mOneDriveClient.get()
+                    .getDrive()
+                    .getRoot()
+                    .buildRequest().get(new ICallback<Item>() {
+                @Override
+                public void success(Item item) {
+                    oneDriveButton.setText("root : " +item.id);
+                }
+
+                @Override
+                public void failure(ClientException ex) {
+                    oneDriveButton.setText("Signed In");
+                }
+            });
+        }
+
+        @Override
+        public void failure(final ClientException error) {
+            // Exception happened during creation.
+
+            Toast.makeText(getApplicationContext(),"Failed signing into OneDrive.",Toast.LENGTH_SHORT).show();
+        }
+    };
+
+    private void signInOneDrive()
     {
-        return false;
+        oneDriveConfig = DefaultClientConfig.createWithAuthenticator(msaAuthenticator);
+        new OneDriveClient.Builder().fromConfig(oneDriveConfig).loginAndBuildClient(this,oneDriveCallback);
     }
+
 
     //endregion
 
@@ -482,6 +667,9 @@ public class MainActivity extends AppCompatActivity
 
         googleDriveViewPager = findViewById(R.id.googleDriveViewPager);
         googleDriveViewPager.setVisibility(View.GONE);
+
+        oneDriveViewPager = findViewById(R.id.oneDriveViewPager);
+        oneDriveViewPager.setVisibility(View.GONE);
 
     }
 
@@ -522,11 +710,12 @@ public class MainActivity extends AppCompatActivity
 
     }
 
+    public int REQUEST_CODE_OPEN_DOCUMENT = 2;
     public void setGoogleDriveView()
     {
-        googleDriveListFragment = new GoogleDriveListFragment();
-
         hideAllContainers();
+
+        googleDriveListFragment = new GoogleDriveListFragment();
 
         googleDriveViewPager = findViewById(R.id.googleDriveViewPager);
 
@@ -537,6 +726,26 @@ public class MainActivity extends AppCompatActivity
         googleDrivePagerAdapter.addFragment(googleDriveListFragment,"GoogleDriveFragment");
 
         googleDriveViewPager.setAdapter(googleDrivePagerAdapter);
+
+
+
+    }
+
+    public void setOneDriveView()
+    {
+        hideAllContainers();
+
+        oneDriveListFragment = new OneDriveListFragment();
+
+        oneDriveViewPager = findViewById(R.id.oneDriveViewPager);
+
+        oneDriveViewPager.setVisibility(View.VISIBLE);
+
+        oneDrivePagerAdapter = new SectionsStatePagerAdapter(getSupportFragmentManager());
+
+        oneDrivePagerAdapter.addFragment(oneDriveListFragment,"OneDriveFragment");
+
+        oneDriveViewPager.setAdapter(oneDrivePagerAdapter);
     }
 
     private void setHomepage()
@@ -595,12 +804,40 @@ public class MainActivity extends AppCompatActivity
         // Handle navigation view item clicks here.
         int id = item.getItemId();
 
-        if (id == R.id.nav_google_drive) {
-            setGoogleDriveView();
+        if (id == R.id.nav_google_drive)
+        {
+            if (isSignedInGoogleDrive)
+            {
+                setGoogleDriveView();
+            }
+            else
+            {
+                signInGoogleDrive();
+                //start authentication process
+            }
+
         } else if (id == R.id.nav_dropbox)
         {
-            setDropboxListView();
+            if (isSignedInDropbox)
+            {
+                setDropboxListView();
+            }
+            else
+            {
+                Auth.startOAuth2Authentication(MainActivity.this, DROPBOX_APP_KEY);
+            }
 
+
+        }else if (id ==R.id.nav_onedrive)
+        {
+            if (isSignedInOneDrive)
+            {
+                setOneDriveView();
+            }
+            else
+            {
+                signInOneDrive();
+            }
         } else if (id == R.id.nav_device)
         {
             //Show list of device files
@@ -633,6 +870,8 @@ public class MainActivity extends AppCompatActivity
 
             DROPBOX_ACCESS_TOKEN = Auth.getOAuth2Token();
 
+            Log.d("TOKEN",DROPBOX_ACCESS_TOKEN);
+
             SharedPreferences sp = this.getPreferences(Context.MODE_PRIVATE);
 
             SharedPreferences.Editor editor = sp.edit();
@@ -660,18 +899,29 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, @Nullable Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
+
 
         Log.d("ActivityResult","Inside On Activity Result");
         //Return from launching signInIntent
         if (requestCode == RC_SIGN_IN)
         {
+            /*
             Log.d("ActivityResult","Running Handle SignIn Result");
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             handleSignInResult(task);
+            */
+
+            if (resultCode == Activity.RESULT_OK && data != null) {
+                handleSignInResult(data);
+            }
         }
+
+
+
     }
 
 

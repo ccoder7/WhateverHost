@@ -20,16 +20,20 @@ import java.util.List;
 
 public class GoogleDriveRetrieveTask extends AsyncTask <String,Integer, ArrayList<GoogleDriveFile>>
 {
+
     @Override
     protected ArrayList<GoogleDriveFile> doInBackground(String... strings)
     {
-        listFiles(strings[0]);
-        return null;
+
+        ArrayList<GoogleDriveFile> myFiles = listFiles(strings[0]);
+
+        return myFiles;
     }
 
 
-    private void listFiles(String folderID)
+    private ArrayList<GoogleDriveFile> listFiles(String folderID)
     {
+        ArrayList<GoogleDriveFile> currentFiles = new ArrayList<>();
         GoogleAccountCredential credential = GoogleAccountCredential.usingOAuth2(MainActivity.mainActivity.getApplicationContext(), Collections.singleton(DriveScopes.DRIVE));
 
         credential.setSelectedAccount(MainActivity.mainActivity.googleAccount.getAccount());
@@ -41,14 +45,9 @@ public class GoogleDriveRetrieveTask extends AsyncTask <String,Integer, ArrayLis
                 .setApplicationName("WhateverHost")
                 .build();
 
-
-
-
-
-
-
-
         List<File> result = new ArrayList<>();
+
+        Log.d("Before","Before 1st try");
 
         try
         {
@@ -56,29 +55,30 @@ public class GoogleDriveRetrieveTask extends AsyncTask <String,Integer, ArrayLis
                     .setFields("files(id, name, parents)")
                     .setQ("'" + MainActivity.mainActivity.googleAccount.getEmail() + "' in owners").setQ("trashed = false and 'root' in parents");
 
+            Log.d("Try","In 1st try");
             do
             {
-
-
+                Log.d("Do","In do-while");
                 try
                 {
-                    //CREATE TEST FOLDER
 
-                    File folder = new File();
-
-                    folder.setName("TEST FOLDER");
-                    folder.setMimeType("application/vnd.google-apps.folder");
-
-                    File file = googleDriveService.files().create(folder).setFields("id").execute();
 
                     FileList files = request.execute();
+
+                    Log.d("Try","In 2nd try D");
+
                     result.addAll(files.getFiles());
+
+                    Log.d("Try","In 2nd try E");
+
                     request.setPageToken(files.getNextPageToken());
 
+                    Log.d("Try","In 2nd try final");
 
                 }
                 catch (IOException e)
                 {
+                    Log.d("Catch","In 2nd catch");
                 }
 
             }while (request.getPageToken() != null && request.getPageToken().length()>0);
@@ -97,6 +97,10 @@ public class GoogleDriveRetrieveTask extends AsyncTask <String,Integer, ArrayLis
                     }
                 }
 
+                Log.d("Added","File added to current files");
+
+                currentFiles.add(new GoogleDriveFile(file.getName(),file.getParents().get(0)));
+
                 counter++;
             }
 
@@ -105,9 +109,21 @@ public class GoogleDriveRetrieveTask extends AsyncTask <String,Integer, ArrayLis
         }
         catch (IOException e)
         {
-
+            Log.d("Catch","1st try caught");
         }
 
+        return currentFiles;
 
+    }
+
+    @Override
+    protected void onPostExecute(ArrayList<GoogleDriveFile> googleDriveFiles) {
+        super.onPostExecute(googleDriveFiles);
+
+        for (GoogleDriveFile file : googleDriveFiles)
+        {
+            Log.d("Name",file.getFileName());
+        }
+        return;
     }
 }

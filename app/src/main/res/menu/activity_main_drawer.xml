@@ -25,9 +25,21 @@
             android:id="@+id/nav_onedrive"
             android:icon="@drawable/ic_onedrive"
             android:title="OneDrive" />
+        <item
+            android:id="@+id/nav_MEGA"
+            android:icon="@drawable/ic_mega_icon_logo_svg_vector"
+            android:title="MEGA" />
+        <item
+            android:id="@+id/nav_mediafire"
+            android:icon="@drawable/ic_mediafire_logo"
+            android:title="Mediafire"/>
+        <item
+            android:id="@+id/nav_4shared"
+            android:icon="@drawable/ic_4shared"
+            android:title="4shared"/>
     </group>
 
-    <item android:title="Communicate">
+    <item android:title="Other">
         <menu>
             <item
                 android:id="@+id/nav_manage"
