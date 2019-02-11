@@ -3,6 +3,7 @@ package com.example.markp.whateverhost.adapters;
 import android.content.Context;
 import android.support.annotation.NonNull;
 import android.support.v7.widget.RecyclerView;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
@@ -130,8 +131,10 @@ public class FileFolderAdapter extends RecyclerView.Adapter<FileFolderAdapter.My
 
                 popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
                     @Override
-                    public boolean onMenuItemClick(MenuItem item) {
-                        return false;
+                    public boolean onMenuItemClick(MenuItem item)
+                    {
+                        Log.d("MenuClick",fileList.get(position).getName());
+                        return true;
                     }
                 });
 

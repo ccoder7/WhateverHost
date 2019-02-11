@@ -4,6 +4,7 @@ import android.os.AsyncTask;
 import android.util.Log;
 
 import com.dropbox.core.DbxException;
+import com.dropbox.core.v2.files.FileMetadata;
 import com.dropbox.core.v2.files.ListFolderResult;
 import com.dropbox.core.v2.files.Metadata;
 import com.example.markp.whateverhost.MainActivity;
@@ -26,7 +27,7 @@ public class DropboxRetrieveTask extends AsyncTask<String, Integer, ArrayList<Dr
             for (Metadata metadata : result.getEntries())
             {
 
-                files.add(new DropboxFile(metadata.getName(),metadata.getPathLower()));
+                files.add(new DropboxFile(metadata.getName(),metadata.getPathLower(), metadata));
 
             }
 
