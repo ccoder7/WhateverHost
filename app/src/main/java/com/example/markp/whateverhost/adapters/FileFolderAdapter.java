@@ -1,7 +1,12 @@
 package com.example.markp.whateverhost.adapters;
 
+import android.app.ProgressDialog;
+import android.content.ActivityNotFoundException;
 import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
 import android.support.annotation.NonNull;
+import android.support.v4.content.FileProvider;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -11,15 +16,21 @@ import android.view.ViewGroup;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
+import com.dropbox.core.v2.files.FileMetadata;
 import com.example.markp.whateverhost.MainActivity;
 import com.example.markp.whateverhost.fragments.DeviceListFragment;
 import com.example.markp.whateverhost.R;
+import com.example.markp.whateverhost.tasks.DropboxUploadTask;
 
 import java.io.File;
+import java.text.DateFormat;
 import java.util.ArrayList;
 import java.util.Date;
+
+import static java.net.URLConnection.guessContentTypeFromName;
 
 public class FileFolderAdapter extends RecyclerView.Adapter<FileFolderAdapter.MyViewHolder> {
 
@@ -104,18 +115,7 @@ public class FileFolderAdapter extends RecyclerView.Adapter<FileFolderAdapter.My
             @Override
             public boolean onLongClick(View v) {
 
-                PopupMenu popupMenu = new PopupMenu(MainActivity.mainActivity,v);
-
-                popupMenu.getMenuInflater().inflate(R.menu.popup_menu_device,popupMenu.getMenu());
-
-                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-                    @Override
-                    public boolean onMenuItemClick(MenuItem item) {
-                        return false;
-                    }
-                });
-
-                popupMenu.show();
+                handleLongClick(position,v);
 
 
                 return true;
@@ -125,21 +125,7 @@ public class FileFolderAdapter extends RecyclerView.Adapter<FileFolderAdapter.My
         myViewHolder.typeImage.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                PopupMenu popupMenu = new PopupMenu(MainActivity.mainActivity,v);
-
-                popupMenu.getMenuInflater().inflate(R.menu.popup_menu_device,popupMenu.getMenu());
-
-                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-                    @Override
-                    public boolean onMenuItemClick(MenuItem item)
-                    {
-                        Log.d("MenuClick",fileList.get(position).getName());
-                        return true;
-                    }
-                });
-
-                popupMenu.show();
-
+                handleLongClick(position,v);
 
                 return true;
             }
@@ -148,19 +134,8 @@ public class FileFolderAdapter extends RecyclerView.Adapter<FileFolderAdapter.My
         myViewHolder.date.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                PopupMenu popupMenu = new PopupMenu(MainActivity.mainActivity,v);
 
-                popupMenu.getMenuInflater().inflate(R.menu.popup_menu_device,popupMenu.getMenu());
-
-                popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-                    @Override
-                    public boolean onMenuItemClick(MenuItem item) {
-                        return false;
-                    }
-                });
-
-                popupMenu.show();
-
+                handleLongClick(position,v);
 
                 return true;
             }
@@ -183,8 +158,90 @@ public class FileFolderAdapter extends RecyclerView.Adapter<FileFolderAdapter.My
         }
         else
         {
-            fragment.setList(clicked);
+            String type = guessContentTypeFromName(clicked.getName());
+
+            Log.d("Type",type);
+
+            Intent intent = new Intent(Intent.ACTION_VIEW);
+
+            Uri data = FileProvider.getUriForFile(MainActivity.mainActivity,
+                    MainActivity.mainActivity.getApplicationContext().getPackageName()
+                            + ".my.package.name.provider",clicked);
+
+            intent.setDataAndType(data,type);
+
+            intent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
+
+            try
+            {
+                MainActivity.mainActivity.startActivity(intent);
+            }
+            catch (ActivityNotFoundException e)
+            {
+                Toast.makeText(MainActivity.mainActivity, "No suitable application found", Toast.LENGTH_SHORT)
+                        .show();
+            }
+
         }
+    }
+
+    private void handleLongClick(int position, View v)
+    {
+        PopupMenu popupMenu = new PopupMenu(MainActivity.mainActivity,v);
+
+        popupMenu.getMenu().add("Upload to Dropbox");
+
+
+
+        popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
+            @Override
+            public boolean onMenuItemClick(MenuItem item)
+            {
+                if (item.getItemId()==0)
+                {
+                    uploadFile(position);
+                }
+                return false;
+            }
+        });
+
+        popupMenu.show();
+    }
+
+    private void uploadFile(int position)
+    {
+        final ProgressDialog dialog = new ProgressDialog(MainActivity.mainActivity);
+        dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        dialog.setCancelable(false);
+        dialog.setMessage("Uploading");
+        dialog.show();
+
+
+        new DropboxUploadTask(MainActivity.mainActivity, MainActivity.mainActivity.client, new DropboxUploadTask.Callback() {
+            @Override
+            public void onUploadComplete(FileMetadata result) {
+                dialog.dismiss();
+
+                String message = result.getName() + " size " + result.getSize() + " modified " +
+                        DateFormat.getDateTimeInstance().format(result.getClientModified());
+                Toast.makeText(MainActivity.mainActivity, message, Toast.LENGTH_SHORT)
+                        .show();
+
+                // Reload the folder
+
+            }
+
+            @Override
+            public void onError(Exception e) {
+                dialog.dismiss();
+
+                Log.e("UploadFail", "Failed to upload file.", e);
+                Toast.makeText(MainActivity.mainActivity,
+                        "An error has occurred",
+                        Toast.LENGTH_SHORT)
+                        .show();
+            }
+        }).execute(fileList.get(position).getAbsolutePath(), "");
     }
 
     @Override

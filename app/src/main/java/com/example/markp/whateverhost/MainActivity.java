@@ -908,6 +908,9 @@ public class MainActivity extends AppCompatActivity
 
         Log.d("ActivityResult","Inside On Activity Result");
         //Return from launching signInIntent
+        Log.d("RequestCode",Integer.toString(requestCode));
+        Log.d("RCSignIn",Integer.toString(RC_SIGN_IN));
+
         if (requestCode == RC_SIGN_IN)
         {
             /*
@@ -915,6 +918,12 @@ public class MainActivity extends AppCompatActivity
             Task<GoogleSignInAccount> task = GoogleSignIn.getSignedInAccountFromIntent(data);
             handleSignInResult(task);
             */
+
+            Log.d("ResultCode",Integer.toString(resultCode));
+
+            Log.d("ResultOK",Integer.toString(Activity.RESULT_OK));
+
+            //handleSignInResult(data);
 
             if (resultCode == Activity.RESULT_OK && data != null) {
                 handleSignInResult(data);
