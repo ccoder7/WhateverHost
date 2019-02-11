@@ -7,6 +7,7 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.NetworkOnMainThreadException;
 import android.support.annotation.NonNull;
@@ -34,7 +35,10 @@ import android.widget.Toast;
 import com.dropbox.core.DbxException;
 import com.dropbox.core.DbxRequestConfig;
 import com.dropbox.core.android.Auth;
+import com.dropbox.core.android.AuthActivity;
 import com.dropbox.core.v2.DbxClientV2;
+import com.dropbox.core.v2.DbxRawClientV2;
+import com.dropbox.core.v2.auth.DbxUserAuthRequests;
 import com.dropbox.core.v2.files.FileMetadata;
 import com.dropbox.core.v2.files.ListFolderResult;
 import com.dropbox.core.v2.files.Metadata;
@@ -75,6 +79,7 @@ import com.onedrive.sdk.core.IClientConfig;
 import com.onedrive.sdk.extensions.IOneDriveClient;
 import com.onedrive.sdk.extensions.Item;
 import com.onedrive.sdk.extensions.OneDriveClient;
+import com.onedrive.sdk.extensions.Share;
 
 public class MainActivity extends AppCompatActivity
         implements NavigationView.OnNavigationItemSelectedListener {
@@ -172,7 +177,10 @@ public class MainActivity extends AppCompatActivity
     //region Application Start
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    protected void onCreate(Bundle savedInstanceState)
+    {
+        //region Other
+
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         Toolbar toolbar = findViewById(R.id.toolbar);
@@ -196,6 +204,10 @@ public class MainActivity extends AppCompatActivity
         NavigationView navigationView = (NavigationView) findViewById(R.id.nav_view);
         navigationView.setNavigationItemSelectedListener(this);
 
+        //endregion
+
+        //region Dropbox
+
         Button dropboxSignInButton = findViewById(R.id.dropboxSignInButton);
 
         dropboxSignInButton.setOnClickListener(new View.OnClickListener() {
@@ -215,9 +227,21 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        Button dropboxLogoutButton = findViewById(R.id.logoutDropboxButton);
+
+        dropboxLogoutButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v)
+            {
+                signOutDropbox();
+            }
+        });
+
+        //endregion
+
+        //region GoogleDrive
+
         Button googleDriveSignInButton = findViewById(R.id.googleDriveSignInButton);
-
-
 
         googleDriveSignInButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -236,6 +260,10 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        //endregion
+
+        //region OneDrive
+
         Button oneDriveSignInButton = findViewById(R.id.oneDriveSignInButton);
 
         oneDriveSignInButton.setOnClickListener(new View.OnClickListener() {
@@ -252,6 +280,8 @@ public class MainActivity extends AppCompatActivity
                 }
             }
         });
+
+        //endregion
 
         checkSignedInAccounts();
 
@@ -284,6 +314,9 @@ public class MainActivity extends AppCompatActivity
                     dropboxSignInButton.setText(account.getEmail());
 
                     isSignedInDropbox = true;
+
+
+
                 }
             }
             catch (Exception e)
@@ -296,6 +329,11 @@ public class MainActivity extends AppCompatActivity
             //UPDATE INFO
 
         }
+        else
+        {
+            Button dropboxLogoutButton = findViewById(R.id.logoutDropboxButton);
+            dropboxLogoutButton.setVisibility(View.GONE);
+        }
 
         //endregion
 
@@ -305,6 +343,8 @@ public class MainActivity extends AppCompatActivity
 
         if (account!=null)
         {
+            signInGoogleDrive();
+
             googleAccount = account;
 
             Button googleDriveButton = findViewById(R.id.googleDriveSignInButton);
@@ -327,6 +367,20 @@ public class MainActivity extends AppCompatActivity
             mDriveServiceHelper = new DriveServiceHelper(googleDriveService);
 
             isSignedInGoogleDrive=true;
+
+            Button googleDriveLogoutButton = findViewById(R.id.logoutGoogleDriveButton);
+
+            googleDriveLogoutButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    signOutGoogleDrive();
+                }
+            });
+        }
+        else
+        {
+            Button googleDriveLogoutButton = findViewById(R.id.logoutGoogleDriveButton);
+            googleDriveLogoutButton.setVisibility(View.GONE);
         }
 
         //endregion
@@ -338,6 +392,11 @@ public class MainActivity extends AppCompatActivity
         if (hasSignedInOneDrive!=null)
         {
             signInOneDrive();
+        }
+        else
+        {
+            Button oneDriveLogoutButton = findViewById(R.id.logoutOneDriveButton);
+            oneDriveLogoutButton.setVisibility(View.GONE);
         }
 
         //endregion
@@ -516,6 +575,58 @@ public class MainActivity extends AppCompatActivity
             }
     }
 
+    private void signOutDropbox()
+    {
+        try
+        {
+            new AsyncTask<Void,Void,Void>()
+            {
+                @Override
+                protected Void doInBackground(Void... voids)
+                {
+                    try
+                    {
+                        client.auth().tokenRevoke();
+                    }catch (DbxException e)
+                    {
+
+                    }
+                    return null;
+                }
+            }.execute().get();
+
+
+
+            SharedPreferences sp = this.getPreferences(Context.MODE_PRIVATE);
+
+            SharedPreferences.Editor editor = sp.edit();
+
+            editor.remove("dropboxToken").commit();
+
+            client = null;
+
+            AuthActivity.result = null;
+
+            isSignedInDropbox = false;
+
+            Button logoutDropboxButton = findViewById(R.id.logoutDropboxButton);
+
+            logoutDropboxButton.setVisibility(View.GONE);
+
+            Button signInDropboxButton = findViewById(R.id.dropboxSignInButton);
+
+            signInDropboxButton.setText("Sign in to Dropbox");
+
+            Toast.makeText(getApplicationContext(),"Logged out of Dropbox",Toast.LENGTH_SHORT).show();
+
+
+        }
+        catch (Exception e)
+        {
+
+        }
+    }
+
     //endregion
 
     //region GoogleDrive
@@ -552,6 +663,17 @@ public class MainActivity extends AppCompatActivity
                     isSignedInGoogleDrive=true;
                     Toast.makeText(getApplicationContext(),"Signed into GoogleDrive.",Toast.LENGTH_SHORT).show();
 
+                    Button googleDriveLogoutButton = findViewById(R.id.logoutGoogleDriveButton);
+
+                    googleDriveLogoutButton.setVisibility(View.VISIBLE);
+
+                    googleDriveLogoutButton.setOnClickListener(new View.OnClickListener() {
+                        @Override
+                        public void onClick(View v) {
+                            signOutGoogleDrive();
+                        }
+                    });
+
                 })
                 .addOnFailureListener(exception -> Log.e(TAG, "Unable to sign in.", exception));
     }
@@ -579,11 +701,17 @@ public class MainActivity extends AppCompatActivity
 
     private void signOutGoogleDrive()
     {
+
         mGoogleSignInClient.signOut().addOnCompleteListener(this, new OnCompleteListener<Void>() {
             @Override
             public void onComplete(@NonNull Task<Void> task) {
                 //sign out
 
+                Button signInGoogleButton = findViewById(R.id.googleDriveSignInButton);
+                signInGoogleButton.setText("Sign in to GoogleDrive");
+                isSignedInGoogleDrive =false;
+                Button logoutGoogleButton = findViewById(R.id.logoutGoogleDriveButton);
+                logoutGoogleButton.setVisibility(View.GONE);
                 //Update UI
                 Toast.makeText(getApplicationContext(),"Signed out of GoogleDrive.",Toast.LENGTH_SHORT).show();
             }
@@ -632,6 +760,17 @@ public class MainActivity extends AppCompatActivity
                     oneDriveButton.setText("Signed In");
                 }
             });
+
+            Button logoutOneDriveButton = findViewById(R.id.logoutOneDriveButton);
+
+            logoutOneDriveButton.setVisibility(View.VISIBLE);
+
+            logoutOneDriveButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    signOutOneDrive();
+                }
+            });
         }
 
         @Override
@@ -646,6 +785,23 @@ public class MainActivity extends AppCompatActivity
     {
         oneDriveConfig = DefaultClientConfig.createWithAuthenticator(msaAuthenticator);
         new OneDriveClient.Builder().fromConfig(oneDriveConfig).loginAndBuildClient(this,oneDriveCallback);
+    }
+
+    private void signOutOneDrive()
+    {
+        mOneDriveClient.get().getAuthenticator().logout();
+
+        Button oneDriveLogoutButton = findViewById(R.id.logoutOneDriveButton);
+
+        oneDriveLogoutButton.setVisibility(View.GONE);
+
+        Button oneDriveSignInButton = findViewById(R.id.oneDriveSignInButton);
+
+        oneDriveSignInButton.setText("Sign in to OneDrive");
+
+        isSignedInOneDrive=false;
+
+        Toast.makeText(getApplicationContext(),"Logged out of OneDrive.",Toast.LENGTH_SHORT).show();
     }
 
 
@@ -891,6 +1047,9 @@ public class MainActivity extends AppCompatActivity
                 {
                     Button dropboxSignInButton = findViewById(R.id.dropboxSignInButton);
                     dropboxSignInButton.setText(account.getEmail());
+
+                    Button dropboxLogoutButton = findViewById(R.id.logoutDropboxButton);
+                    dropboxLogoutButton.setVisibility(View.VISIBLE);
                 }
             }
             catch (Exception e)
