@@ -18,12 +18,16 @@ import com.dropbox.core.v2.files.Metadata;
 import com.example.markp.whateverhost.MainActivity;
 import com.example.markp.whateverhost.R;
 import com.example.markp.whateverhost.adapters.DropboxFileAdapter;
+import com.example.markp.whateverhost.files.DropboxFile;
 import com.example.markp.whateverhost.tasks.DropboxRetrieveTask;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 public class DropboxListFragment extends Fragment
 {
+    public String currentPath = null;
 
     @Nullable
     @Override
@@ -42,6 +46,8 @@ public class DropboxListFragment extends Fragment
         {
             MainActivity.mainActivity.dropboxFiles = new DropboxRetrieveTask().execute("").get();
 
+            sortDropboxFiles();
+
             setDropboxAdapters("");
 
 
@@ -59,6 +65,8 @@ public class DropboxListFragment extends Fragment
         {
             MainActivity.mainActivity.dropboxFiles = new DropboxRetrieveTask().execute(path).get();
 
+            sortDropboxFiles();
+
             setDropboxAdapters(path);
 
 
@@ -69,8 +77,19 @@ public class DropboxListFragment extends Fragment
         }
     }
 
+    private void sortDropboxFiles()
+    {
+        Collections.sort(MainActivity.mainActivity.dropboxFiles, new Comparator<DropboxFile>() {
+            @Override
+            public int compare(DropboxFile o1, DropboxFile o2) {
+                return o1.getFileName().toLowerCase().compareTo(o2.getFileName().toLowerCase());
+            }
+        });
+    }
+
     private void setDropboxAdapters(String path)
     {
+        currentPath=path;
         RecyclerView myRv = ((MainActivity)getActivity()).findViewById(R.id.dropboxListView);
 
         DropboxFileAdapter adapter = new DropboxFileAdapter(getContext(),((MainActivity)getActivity()).dropboxFiles,this);

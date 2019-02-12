@@ -18,6 +18,8 @@ import com.example.markp.whateverhost.adapters.FileFolderAdapter;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
 
 public class DeviceListFragment extends Fragment {
 
@@ -58,8 +60,14 @@ public class DeviceListFragment extends Fragment {
 
         for (int i=0;i<files.length;i++)
         {
-            filesList.add(files[i]);
+            if (!files[i].getName().substring(0,1).equals("."))
+            {
+                filesList.add(files[i]);
+            }
+
         }
+
+        sortFiles();
 
         //INIT LIST
         RecyclerView myRv = (RecyclerView)((MainActivity)getActivity()).findViewById(R.id.deviceListView);
@@ -78,5 +86,15 @@ public class DeviceListFragment extends Fragment {
         TextView folderPath = getActivity().findViewById(R.id.currentFolderText);
 
         folderPath.setText(parentFolder.getAbsolutePath());
+    }
+
+    private void sortFiles()
+    {
+        Collections.sort(filesList, new Comparator<File>() {
+            @Override
+            public int compare(File o1, File o2) {
+                return o1.getName().toLowerCase().compareTo(o2.getName().toLowerCase());
+            }
+        });
     }
 }
