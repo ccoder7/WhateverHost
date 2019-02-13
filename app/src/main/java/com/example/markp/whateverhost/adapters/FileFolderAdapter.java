@@ -1,8 +1,10 @@
 package com.example.markp.whateverhost.adapters;
 
+import android.app.AlertDialog;
 import android.app.ProgressDialog;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
 import android.support.annotation.NonNull;
@@ -191,15 +193,39 @@ public class FileFolderAdapter extends RecyclerView.Adapter<FileFolderAdapter.My
 
         popupMenu.getMenu().add("Upload to Dropbox");
 
+        popupMenu.getMenu().add("Delete");
+
 
 
         popupMenu.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
             @Override
             public boolean onMenuItemClick(MenuItem item)
             {
-                if (item.getItemId()==0)
+                if (item.getTitle().equals("Upload to Dropbox"))
                 {
                     uploadFile(position);
+                }
+                else if (item.getTitle().equals("Delete"))
+                {
+                    AlertDialog deleteAlert = new AlertDialog.Builder(MainActivity.mainActivity)
+                            .setTitle("Deleting file")
+                            .setMessage("Are you sure you want to delete '" + fileList.get(position).getName() + "'?")
+                            .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    File parent = fileList.get(position).getParentFile();
+                                    fileList.get(position).delete();
+                                    fragment.setList(parent);
+                                }
+                            })
+                            .setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+
+                                }
+                            })
+                            .create();
+                    deleteAlert.show();
                 }
                 return false;
             }

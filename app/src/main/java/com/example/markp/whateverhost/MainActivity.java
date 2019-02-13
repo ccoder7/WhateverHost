@@ -2,11 +2,18 @@ package com.example.markp.whateverhost;
 
 import android.Manifest;
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.net.ConnectivityManager;
+import android.net.Network;
+import android.net.NetworkCapabilities;
+import android.net.NetworkInfo;
+import android.net.NetworkRequest;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.NetworkOnMainThreadException;
@@ -87,6 +94,8 @@ public class MainActivity extends AppCompatActivity
     public static MainActivity mainActivity;
 
     //region Check Connection Variables
+
+    AlertDialog connectionLostAlertDialog;
 
     boolean isSignedInDropbox = false;
 
@@ -287,7 +296,50 @@ public class MainActivity extends AppCompatActivity
 
         getPermissions();
 
+        this.registerReceiver(myBroadcastReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+
+
+
     }
+
+    private BroadcastReceiver myBroadcastReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            boolean noConnectivity = intent.getBooleanExtra(ConnectivityManager.EXTRA_NO_CONNECTIVITY, false);
+            String reason = intent.getStringExtra(ConnectivityManager.EXTRA_REASON);
+            boolean isFailover = intent.getBooleanExtra(ConnectivityManager.EXTRA_IS_FAILOVER, false);
+
+            NetworkInfo currentNetworkInfo = (NetworkInfo) intent.getParcelableExtra(ConnectivityManager.EXTRA_NETWORK_INFO);
+            NetworkInfo otherNetworkInfo = (NetworkInfo) intent.getParcelableExtra(ConnectivityManager.EXTRA_OTHER_NETWORK_INFO);
+
+            if(currentNetworkInfo.isConnected()){
+                if (connectionLostAlertDialog!=null)
+                {
+                    if (connectionLostAlertDialog.isShowing())
+                    {
+                        connectionLostAlertDialog.dismiss();
+                        Toast.makeText(getApplicationContext(),"Connection recovered.",Toast.LENGTH_SHORT).show();
+
+                    }
+                }
+
+            }else{
+                connectionLostAlertDialog = new AlertDialog.Builder(MainActivity.this)
+                        .setCancelable(false).setTitle("No Internet connection")
+                        .setMessage("'Whatever! - Host' requires internet connection to work. \n \n" +
+                                "Please connect to the internet.")
+                        .setNegativeButton("Quit", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                moveTaskToBack(true);
+                                android.os.Process.killProcess(android.os.Process.myPid());
+                                System.exit(0);
+                            }
+                        }).create();
+                connectionLostAlertDialog.show();
+            }
+        }
+    };
 
     private void checkSignedInAccounts()
     {
@@ -505,7 +557,6 @@ public class MainActivity extends AppCompatActivity
     {
         mainActivity=this;
     }
-
 
     //endregion
 
