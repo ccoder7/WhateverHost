@@ -7,6 +7,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.net.Uri;
+import android.os.Handler;
 import android.support.annotation.NonNull;
 import android.support.v4.content.FileProvider;
 import android.support.v7.widget.RecyclerView;
@@ -15,6 +16,7 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
@@ -36,6 +38,9 @@ import static java.net.URLConnection.guessContentTypeFromName;
 
 public class FileFolderAdapter extends RecyclerView.Adapter<FileFolderAdapter.MyViewHolder> {
 
+
+    private boolean showCheckboxes = false;
+    private ArrayList<Boolean> isChecked = new ArrayList<>();
 
     private Context mContext;
     private ArrayList<File> fileList;
@@ -66,6 +71,28 @@ public class FileFolderAdapter extends RecyclerView.Adapter<FileFolderAdapter.My
         myViewHolder.name.setText(fileList.get(position).getName());
         Date lastModDate = new Date(fileList.get(position).lastModified());
         myViewHolder.date.setText(lastModDate.toString());
+
+        if (showCheckboxes)
+        {
+            myViewHolder.checkBox.setVisibility(View.VISIBLE);
+
+            if (position>=isChecked.size())
+            {
+                isChecked.add(false);
+            }
+            else if (isChecked.get(position))
+            {
+                Log.d("Checked",fileList.get(position).getName());
+                myViewHolder.checkBox.setChecked(true);
+            }
+        }
+        if (!showCheckboxes)
+        {
+            isChecked.add(false);
+            myViewHolder.checkBox.setVisibility(View.GONE);
+            Log.d("1st Name",myViewHolder.name.getText().toString());
+            Log.d("1st Position",Integer.toString(position));
+        }
 
         if (fileList.get(position).isDirectory())
         {
@@ -113,13 +140,12 @@ public class FileFolderAdapter extends RecyclerView.Adapter<FileFolderAdapter.My
             }
         });
 
+
         myViewHolder.name.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
 
-                handleLongClick(position,v);
-
-
+                handleLongClick(position,v, myViewHolder);
                 return true;
             }
         });
@@ -127,7 +153,7 @@ public class FileFolderAdapter extends RecyclerView.Adapter<FileFolderAdapter.My
         myViewHolder.typeImage.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                handleLongClick(position,v);
+                handleLongClick(position,v, myViewHolder);
 
                 return true;
             }
@@ -137,7 +163,7 @@ public class FileFolderAdapter extends RecyclerView.Adapter<FileFolderAdapter.My
             @Override
             public boolean onLongClick(View v) {
 
-                handleLongClick(position,v);
+                handleLongClick(position,v, myViewHolder);
 
                 return true;
             }
@@ -187,8 +213,16 @@ public class FileFolderAdapter extends RecyclerView.Adapter<FileFolderAdapter.My
         }
     }
 
-    private void handleLongClick(int position, View v)
+    private void handleLongClick(int position, View v, MyViewHolder myViewHolder)
     {
+        showCheckboxes = true;
+
+
+        isChecked.set(position, true);
+
+        this.notifyDataSetChanged();
+
+        /*
         PopupMenu popupMenu = new PopupMenu(MainActivity.mainActivity,v);
 
         popupMenu.getMenu().add("Upload to Dropbox");
@@ -232,6 +266,7 @@ public class FileFolderAdapter extends RecyclerView.Adapter<FileFolderAdapter.My
         });
 
         popupMenu.show();
+        */
     }
 
     private void uploadFile(int position)
@@ -280,6 +315,7 @@ public class FileFolderAdapter extends RecyclerView.Adapter<FileFolderAdapter.My
         ImageView typeImage;
         TextView name;
         TextView date;
+        CheckBox checkBox;
 
         public MyViewHolder(View itemView)
         {
@@ -288,6 +324,7 @@ public class FileFolderAdapter extends RecyclerView.Adapter<FileFolderAdapter.My
             typeImage = itemView.findViewById(R.id.fileFolderTypeImage);
             name = itemView.findViewById(R.id.fileFolderName);
             date = itemView.findViewById(R.id.fileFolderDate);
+            checkBox = itemView.findViewById(R.id.fileCheckBox);
         }
     }
 }
