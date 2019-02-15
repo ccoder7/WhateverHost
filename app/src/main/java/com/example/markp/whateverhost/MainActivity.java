@@ -292,11 +292,12 @@ public class MainActivity extends AppCompatActivity
 
         //endregion
 
+        this.registerReceiver(myBroadcastReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+
         checkSignedInAccounts();
 
         getPermissions();
 
-        this.registerReceiver(myBroadcastReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
 
 
 
@@ -956,7 +957,7 @@ public class MainActivity extends AppCompatActivity
         oneDriveViewPager.setAdapter(oneDrivePagerAdapter);
     }
 
-    private void setHomepage()
+    public void setHomepage()
     {
         hideAllContainers();
 
@@ -978,7 +979,23 @@ public class MainActivity extends AppCompatActivity
         } else if (myDeviceViewPager.getVisibility()==View.VISIBLE)
         {
             deviceListFragment.setList(deviceListFragment.currentFolder.getParentFile());
-        } else
+        } else if (homepage.getVisibility()==View.VISIBLE)
+        {
+            System.exit(0);
+        }else if (dropboxViewPager.getVisibility()==View.VISIBLE)
+        {
+            if (dropboxListFragment.currentPath.equals(""))
+            {
+                setHomepage();
+                NavigationView navigationView = findViewById(R.id.nav_view);
+                navigationView.getMenu().getItem(0).setChecked(true);
+            }else
+            {
+                dropboxListFragment.updateAdapterPath(dropboxListFragment.getParentFolder());
+            }
+
+        }
+        else
         {
             super.onBackPressed();
         }
@@ -1144,6 +1161,11 @@ public class MainActivity extends AppCompatActivity
 
     }
 
+    @Override
+    protected void onDestroy() {
+        super.onDestroy();
+        unregisterReceiver(myBroadcastReceiver);
+    }
 
     //endregion
 

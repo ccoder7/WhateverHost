@@ -27,7 +27,7 @@ public class DropboxFile extends CustomFile
 
         String type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
 
-        Log.d("Mime",metadata.getName() + " with type : " + type);
+        //Log.d("Mime",metadata.getName() + " with type : " + type);
 
         if (type!=null)
         {
@@ -49,7 +49,7 @@ public class DropboxFile extends CustomFile
 
         String type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
 
-        Log.d("Mime",metadata.getName() + " with type : " + type);
+        //Log.d("Mime",metadata.getName() + " with type : " + type);
 
         if (type!=null)
         {
@@ -71,7 +71,7 @@ public class DropboxFile extends CustomFile
 
         String type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
 
-        Log.d("Mime",metadata.getName() + " with type : " + type);
+        //Log.d("Mime",metadata.getName() + " with type : " + type);
 
         if (type!=null)
         {
@@ -92,7 +92,7 @@ public class DropboxFile extends CustomFile
 
         String type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
 
-        Log.d("Mime",metadata.getName() + " with type : " + type);
+        //Log.d("Mime",metadata.getName() + " with type : " + type);
 
         if (type!=null)
         {
@@ -113,7 +113,7 @@ public class DropboxFile extends CustomFile
 
         String type = MimeTypeMap.getSingleton().getMimeTypeFromExtension(extension);
 
-        Log.d("Mime",metadata.getName() + " with type : " + type);
+        //Log.d("Mime",metadata.getName() + " with type : " + type);
 
         if (type!=null)
         {

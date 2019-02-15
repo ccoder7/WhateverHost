@@ -4,6 +4,7 @@ import android.os.Bundle;
 import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.design.widget.NavigationView;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -24,6 +25,7 @@ import java.util.Comparator;
 public class DeviceListFragment extends Fragment {
 
     public static ArrayList<File> filesList;
+    public static ArrayList<Boolean> isChecked;
 
     public File currentFolder;
 
@@ -47,6 +49,9 @@ public class DeviceListFragment extends Fragment {
 
         if (!parentFolder.canRead())
         {
+            NavigationView navigationView = (NavigationView) MainActivity.mainActivity.findViewById(R.id.nav_view);
+            navigationView.getMenu().getItem(0).setChecked(true);
+            MainActivity.mainActivity.setHomepage();
             return;
         }
 
@@ -56,6 +61,7 @@ public class DeviceListFragment extends Fragment {
         File[] files = parentFolder.listFiles();
 
         filesList = new ArrayList<>();
+        isChecked = new ArrayList<>();
 
 
         for (int i=0;i<files.length;i++)
@@ -63,6 +69,8 @@ public class DeviceListFragment extends Fragment {
             if (!files[i].getName().substring(0,1).equals("."))
             {
                 filesList.add(files[i]);
+
+                isChecked.add(false);
             }
 
         }
@@ -74,7 +82,7 @@ public class DeviceListFragment extends Fragment {
 
         FileFolderAdapter myAdapter;
 
-        myAdapter= new FileFolderAdapter((getContext()),filesList, this);
+        myAdapter= new FileFolderAdapter((getContext()),filesList, isChecked, this);
 
 
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager((getActivity()));
@@ -96,5 +104,25 @@ public class DeviceListFragment extends Fragment {
                 return o1.getName().toLowerCase().compareTo(o2.getName().toLowerCase());
             }
         });
+
+        ArrayList<File> folders = new ArrayList<>();
+        ArrayList<File> files = new ArrayList<>();
+
+        for (File file : filesList)
+        {
+            if (file.isDirectory())
+            {
+                folders.add(file);
+            }
+            else
+            {
+                files.add(file);
+            }
+        }
+
+        filesList = folders;
+        filesList.addAll(files);
+
+
     }
 }

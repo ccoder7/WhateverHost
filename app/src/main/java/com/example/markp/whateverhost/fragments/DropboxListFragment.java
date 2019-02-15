@@ -13,6 +13,7 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 
 import com.dropbox.core.DbxException;
+import com.dropbox.core.v2.files.FolderMetadata;
 import com.dropbox.core.v2.files.ListFolderResult;
 import com.dropbox.core.v2.files.Metadata;
 import com.example.markp.whateverhost.MainActivity;
@@ -28,6 +29,7 @@ import java.util.Comparator;
 public class DropboxListFragment extends Fragment
 {
     public String currentPath = null;
+    private ArrayList<Boolean> isChecked;
 
     @Nullable
     @Override
@@ -45,6 +47,13 @@ public class DropboxListFragment extends Fragment
         try
         {
             MainActivity.mainActivity.dropboxFiles = new DropboxRetrieveTask().execute("").get();
+
+            isChecked = new ArrayList<>();
+
+            for (DropboxFile file : MainActivity.mainActivity.dropboxFiles)
+            {
+                isChecked.add(false);
+            }
 
             sortDropboxFiles();
 
@@ -65,6 +74,13 @@ public class DropboxListFragment extends Fragment
         {
             MainActivity.mainActivity.dropboxFiles = new DropboxRetrieveTask().execute(path).get();
 
+            isChecked = new ArrayList<>();
+
+            for (DropboxFile file : MainActivity.mainActivity.dropboxFiles)
+            {
+                isChecked.add(false);
+            }
+
             sortDropboxFiles();
 
             setDropboxAdapters(path);
@@ -73,7 +89,6 @@ public class DropboxListFragment extends Fragment
         }
         catch (Exception e)
         {
-            Log.d("Exception","mothafucking exception");
         }
     }
 
@@ -85,6 +100,26 @@ public class DropboxListFragment extends Fragment
                 return o1.getFileName().toLowerCase().compareTo(o2.getFileName().toLowerCase());
             }
         });
+
+        ArrayList<DropboxFile> folders = new ArrayList<>();
+
+        ArrayList<DropboxFile> files = new ArrayList<>();
+
+        for (DropboxFile file : MainActivity.mainActivity.dropboxFiles)
+        {
+            if (file.metadata instanceof FolderMetadata)
+            {
+                folders.add(file);
+            }
+            else
+            {
+                files.add(file);
+            }
+        }
+
+        MainActivity.mainActivity.dropboxFiles = folders;
+
+        MainActivity.mainActivity.dropboxFiles.addAll(files);
     }
 
     private void setDropboxAdapters(String path)
@@ -92,7 +127,8 @@ public class DropboxListFragment extends Fragment
         currentPath=path;
         RecyclerView myRv = ((MainActivity)getActivity()).findViewById(R.id.dropboxListView);
 
-        DropboxFileAdapter adapter = new DropboxFileAdapter(getContext(),((MainActivity)getActivity()).dropboxFiles,this);
+        DropboxFileAdapter adapter = new DropboxFileAdapter(getContext(),
+                ((MainActivity)getActivity()).dropboxFiles,isChecked,this);
 
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(getActivity());
         linearLayoutManager.setOrientation(LinearLayoutManager.VERTICAL);
@@ -105,4 +141,14 @@ public class DropboxListFragment extends Fragment
         folderPath.setText(path);
     }
 
+    public String getParentFolder()
+    {
+        String parentFolder;
+
+        parentFolder = currentPath.substring(0, currentPath.lastIndexOf("/"));
+
+        Log.d("Parent",parentFolder);
+
+        return parentFolder;
+    }
 }

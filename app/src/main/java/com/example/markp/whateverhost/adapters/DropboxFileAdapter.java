@@ -6,6 +6,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.os.AsyncTask;
 import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v4.app.Fragment;
 import android.support.v7.widget.RecyclerView;
 import android.util.Log;
@@ -13,6 +14,7 @@ import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.PopupMenu;
 import android.widget.TextView;
@@ -29,18 +31,23 @@ import com.example.markp.whateverhost.fragments.DropboxListFragment;
 import com.example.markp.whateverhost.tasks.DropboxDownloadTask;
 
 import java.io.File;
+import java.lang.reflect.Array;
 import java.util.ArrayList;
 
 public class DropboxFileAdapter extends RecyclerView.Adapter<DropboxFileAdapter.MyViewHolder>
 {
+    private boolean showCheckboxes = false;
+    private ArrayList<Boolean> isChecked;
+
     Context mContext;
     ArrayList<DropboxFile> dropboxFiles;
     DropboxListFragment fragment;
 
 
-    public DropboxFileAdapter(Context mContext, ArrayList<DropboxFile> dropboxFiles, DropboxListFragment fragment) {
+    public DropboxFileAdapter(Context mContext, ArrayList<DropboxFile> dropboxFiles, ArrayList<Boolean> isChecked, DropboxListFragment fragment) {
         this.mContext = mContext;
         this.fragment = fragment;
+        this.isChecked = isChecked;
         this.dropboxFiles = dropboxFiles;
     }
 
@@ -58,6 +65,31 @@ public class DropboxFileAdapter extends RecyclerView.Adapter<DropboxFileAdapter.
     public void onBindViewHolder(@NonNull MyViewHolder myViewHolder, int i) {
 
         final int position = i;
+
+        if (showCheckboxes)
+        {
+            myViewHolder.dropboxCheckbox.setVisibility(View.VISIBLE);
+
+
+            myViewHolder.dropboxCheckbox.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    boolean checked = myViewHolder.dropboxCheckbox.isChecked();
+
+                    isChecked.set(position, checked);
+
+                    myViewHolder.dropboxCheckbox.setChecked(isChecked.get(position));
+
+                }
+            });
+
+            myViewHolder.dropboxCheckbox.setChecked(isChecked.get(position));
+        }
+        if (!showCheckboxes)
+        {
+            isChecked.set(position,false);
+            myViewHolder.dropboxCheckbox.setVisibility(View.GONE);
+        }
 
         setImageType(dropboxFiles.get(position), myViewHolder);
 
@@ -93,7 +125,6 @@ public class DropboxFileAdapter extends RecyclerView.Adapter<DropboxFileAdapter.
                     alertDialog.setNegativeButton("No", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            Log.d("Alert","chose not to download");
                         }
                     });
 
@@ -102,7 +133,6 @@ public class DropboxFileAdapter extends RecyclerView.Adapter<DropboxFileAdapter.
             }
 
             });
-
 
         myViewHolder.dropboxFileName.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -134,7 +164,6 @@ public class DropboxFileAdapter extends RecyclerView.Adapter<DropboxFileAdapter.
                     alertDialog.setNegativeButton("No", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            Log.d("Alert","chose not to download");
                         }
                     });
 
@@ -142,6 +171,8 @@ public class DropboxFileAdapter extends RecyclerView.Adapter<DropboxFileAdapter.
                 }
             }
         });
+
+
 
         myViewHolder.dropboxTypeImage.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -171,7 +202,6 @@ public class DropboxFileAdapter extends RecyclerView.Adapter<DropboxFileAdapter.
                     alertDialog.setNegativeButton("No", new DialogInterface.OnClickListener() {
                         @Override
                         public void onClick(DialogInterface dialog, int which) {
-                            Log.d("Alert","chose not to download");
                         }
                     });
 
@@ -188,38 +218,7 @@ public class DropboxFileAdapter extends RecyclerView.Adapter<DropboxFileAdapter.
             @Override
             public boolean onLongClick(View v)
             {
-                PopupMenu popup = new PopupMenu(MainActivity.mainActivity,v);
-
-                popup.getMenu().add("Download");
-
-                popup.getMenu().add("Move");
-
-                popup.getMenu().add("Delete");
-
-                popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-                    @Override
-                    public boolean onMenuItemClick(MenuItem item) {
-
-                        if (item.getTitle().toString()=="Download")
-                        {
-                            downloadFile(position);
-                        }
-                        else if (item.getTitle().toString()=="Move")
-                        {
-
-                        }
-                        else if (item.getTitle().toString()=="Delete")
-                        {
-                            Log.d("Delete","Deleting File");
-                            deleteFile(position);
-                        }
-
-                        return true;
-                    }
-                });
-
-                popup.show();
-
+                handleLongClick(position,v);
                 return true;
             }
         });
@@ -227,38 +226,7 @@ public class DropboxFileAdapter extends RecyclerView.Adapter<DropboxFileAdapter.
         myViewHolder.dropboxTypeImage.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
-                PopupMenu popup = new PopupMenu(MainActivity.mainActivity,v);
-
-                popup.getMenu().add("Download");
-
-                popup.getMenu().add("Move");
-
-                popup.getMenu().add("Delete");
-
-                popup.setOnMenuItemClickListener(new PopupMenu.OnMenuItemClickListener() {
-                    @Override
-                    public boolean onMenuItemClick(MenuItem item) {
-
-                        if (item.getTitle().toString()=="Download")
-                        {
-                            downloadFile(position);
-                        }
-                        else if (item.getTitle().toString()=="Move")
-                        {
-
-                        }
-                        else if (item.getTitle().toString()=="Delete")
-                        {
-                            Log.d("Delete","Deleting File");
-                            deleteFile(position);
-                        }
-
-
-                        return true;
-                    }
-                });
-
-                popup.show();
+                handleLongClick(position,v);
 
                 return true;
             }
@@ -267,9 +235,29 @@ public class DropboxFileAdapter extends RecyclerView.Adapter<DropboxFileAdapter.
         myViewHolder.dropboxFileDate.setOnLongClickListener(new View.OnLongClickListener() {
             @Override
             public boolean onLongClick(View v) {
+                handleLongClick(position,v);
+                return true;
+            }
+        });
+    }
+
+    private void handleLongClick(int position, View v)
+    {
+        showCheckboxes = true;
+
+        isChecked.set(position,true);
+
+        this.notifyDataSetChanged();
+
+        final FloatingActionButton fab = (FloatingActionButton) v.getRootView().findViewById(R.id.fab);
+        fab.show();
+
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
                 PopupMenu popup = new PopupMenu(MainActivity.mainActivity,v);
 
-                popup.getMenu().add("Download " + dropboxFiles.get(i).fileName);
+                popup.getMenu().add("Download");
 
                 popup.getMenu().add("Move");
 
@@ -279,9 +267,28 @@ public class DropboxFileAdapter extends RecyclerView.Adapter<DropboxFileAdapter.
                     @Override
                     public boolean onMenuItemClick(MenuItem item) {
 
+                        ArrayList<DropboxFile> selectedFiles = new ArrayList<>();
+
+                        for (int i=0; i<dropboxFiles.size();i++)
+                        {
+                            if (isChecked.get(i))
+                            {
+                                selectedFiles.add(dropboxFiles.get(i));
+                            }
+                        }
+
+                        if (selectedFiles.size()<1)
+                        {
+                            return false;
+                        }
+
                         if (item.getTitle().toString()=="Download")
                         {
-                            downloadFile(position);
+                            fab.hide();
+                            showCheckboxes= false;
+
+
+                            downloadFiles(selectedFiles);
                         }
                         else if (item.getTitle().toString()=="Move")
                         {
@@ -289,20 +296,19 @@ public class DropboxFileAdapter extends RecyclerView.Adapter<DropboxFileAdapter.
                         }
                         else if (item.getTitle().toString()=="Delete")
                         {
-                            Log.d("Delete","Deleting File");
-                            deleteFile(position);
+                            deleteFiles(selectedFiles);
                         }
-
 
                         return true;
                     }
                 });
 
-
                 popup.show();
-                return true;
             }
         });
+
+
+
     }
 
     @Override
@@ -387,13 +393,73 @@ public class DropboxFileAdapter extends RecyclerView.Adapter<DropboxFileAdapter.
         }).execute(file);
     }
 
-    private void deleteFile(int position)
+    private void downloadFiles(ArrayList<DropboxFile> files)
+    {
+        for (DropboxFile file : files)
+        {
+            downloadFile(file);
+        }
+
+        this.notifyDataSetChanged();
+    }
+
+    private void downloadFile(DropboxFile downloadFile)
+    {
+        final ProgressDialog dialog = new ProgressDialog(MainActivity.mainActivity);
+        dialog.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+        dialog.setCancelable(false);
+        dialog.setMessage("Downloading");
+        dialog.show();
+
+
+        FileMetadata file;
+
+        if (downloadFile.metadata instanceof  FileMetadata)
+        {
+            file = (FileMetadata)downloadFile.metadata;
+        }
+        else
+        {
+            dialog.dismiss();
+            return;
+        }
+
+        new DropboxDownloadTask(MainActivity.mainActivity, MainActivity.mainActivity.client, new DropboxDownloadTask.Callback() {
+            @Override
+            public void onDownloadComplete(File result)
+            {
+                dialog.dismiss();
+
+                Toast.makeText(MainActivity.mainActivity,"File downloaded",Toast.LENGTH_SHORT).show();
+
+            }
+
+            @Override
+            public void onError(Exception e)
+            {
+                dialog.dismiss();
+
+                Toast.makeText(MainActivity.mainActivity,"Error while downloading",Toast.LENGTH_SHORT).show();
+
+            }
+        }).execute(file);
+    }
+
+    private void deleteFiles(ArrayList<DropboxFile> files)
+    {
+        for (DropboxFile file : files)
+        {
+            deleteFile(file);
+        }
+    }
+
+    private void deleteFile(DropboxFile file)
     {
         AlertDialog.Builder alertDialog = new AlertDialog.Builder(MainActivity.mainActivity);
 
         alertDialog.setTitle("Deleting file");
 
-        alertDialog.setMessage("Are you sure you want to delete '" + dropboxFiles.get(position).getFileName() + "'?");
+        alertDialog.setMessage("Are you sure you want to delete '" + file.getFileName() + "'?");
 
         alertDialog.setPositiveButton("Yes", new DialogInterface.OnClickListener() {
             @Override
@@ -409,10 +475,9 @@ public class DropboxFileAdapter extends RecyclerView.Adapter<DropboxFileAdapter.
                         {
                             try{
                                 MainActivity.mainActivity.client
-                                        .files().deleteV2(dropboxFiles.get(position).getFilePath());
+                                        .files().deleteV2(file.getFilePath());
                             }catch (DbxException e)
                             {
-                                Log.d("Exception","Exception caught while deleting file");
                             }
                             return null;
                         }
@@ -432,19 +497,16 @@ public class DropboxFileAdapter extends RecyclerView.Adapter<DropboxFileAdapter.
 
                 }
 
-                Log.d("Alert","deleting file after alert : "
-                        + dropboxFiles.get(position).getFileName());
             }
         });
 
         alertDialog.setNegativeButton("No", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialog, int which) {
-                Log.d("Alert","chose not to delete");
             }
         });
 
-        if (dropboxFiles.get(position).metadata instanceof FolderMetadata)
+        if (file.metadata instanceof FolderMetadata)
         {
             Toast.makeText(MainActivity.mainActivity,"Cannot delete folder yet",Toast.LENGTH_SHORT).show();
             return;
@@ -458,6 +520,7 @@ public class DropboxFileAdapter extends RecyclerView.Adapter<DropboxFileAdapter.
         ImageView dropboxTypeImage;
         TextView dropboxFileName;
         TextView dropboxFileDate;
+        CheckBox dropboxCheckbox;
 
         public MyViewHolder(View itemView)
         {
@@ -466,6 +529,7 @@ public class DropboxFileAdapter extends RecyclerView.Adapter<DropboxFileAdapter.
             dropboxTypeImage = itemView.findViewById(R.id.fileFolderTypeImage);
             dropboxFileName = itemView.findViewById(R.id.fileFolderName);
             dropboxFileDate = itemView.findViewById(R.id.fileFolderDate);
+            dropboxCheckbox = itemView.findViewById(R.id.fileCheckBox);
         }
     }
 }
